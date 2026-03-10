@@ -1,64 +1,96 @@
-================================================================================
-                    NAS — Docker Laravel Setup
-================================================================================
+# 📁 PART 1: PROJECT SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+> Objective: Prepare folders and project files on the NAS.
 
---- Step 1: Connect to your network ---
+## Step 1.1: Connect to your network
+1. Upload your project into the `//name_of_project` folder
+2. Make a `//data` folder
+3. Upload your `Dockerfile`
 
-    upload you project in //name_of_project folder
-    make a //data folder
-    upload your Dockerfile
+---
 
+## Step 1.2: Create project
+1. Upon creating the project, make a `.yml` file and paste your code in it
+2. Then create the project
 
---- Step 2: Create project ---
+<br><br>
 
-    upon creting project make .yml file and paste you code in it
-    then create project
+# 🐳 PART 2: CONTAINER CONFIGURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+> Objective: Access the container to apply permissions and generate keys.
 
---- Step 3: SSH into NAS ---
+## Step 2.1: SSH into NAS
+```bash
+ssh //your-username@192.168.10.83
 
-    ssh //your-username@192.168.10.83
+# Example:
+ssh Jigar_ITPL@192.168.10.83
+```
 
-    ssh Jigar_ITPL@192.168.10.83
+---
 
+## Step 2.2: Generate app key
+```bash
+sudo docker exec -it //app:container_name php artisan key:generate
 
---- Step 4: Generate app key ---
+# Example:
+sudo docker exec -it laravel_app php artisan key:generate
+```
 
-    sudo docker exec -it //app:container_name php artisan key:generate
-    sudo docker exec -it laravel_app php artisan key:generate
+---
 
+## Step 2.3: Set permissions
+```bash
+sudo docker exec -it laravel_app chown -R www-data:www-data /var/www/html
+sudo docker exec -it laravel_app chmod -R 775 /var/www/html
+sudo docker exec -it laravel_app chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
+```
 
---- Step 5: Set permissions ---
+---
 
-    sudo docker exec -it //app:container_name chmod -R 777 storage bootstrap/cach
+## Step 2.4: Enter container shell
+```bash
+sudo docker exec -it //app:container_name sh
 
+# Example:
+sudo docker exec -it laravel_app sh
+```
 
---- Step 6: Enter container shell ---
+---
 
-    sudo docker exec -it //app:container_name sh
-    sudo docker exec -it laravel_app sh
+## Step 2.5: Run migrations
+```bash
+php artisan migrate
+```
 
+<br><br>
 
---- Step 7: Run migrations ---
+# 📦 PART 3: DATABASE & ACCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    php artisan migrate
+> Objective: Configure the Database and access the Laravel Application.
 
+## Step 3.1: Load DATABASE
+```bash
+# If table exists:
+sudo docker exec -it //db:container_name mysql -u root -proot -e "DROP DATABASE //db_name in MYSQL_DATABASE; CREATE DATABASE //db_name in MYSQL_DATABASE;"
 
---- Step 8: Load DATABASE ---
+# Import SQL dump:
+sudo docker exec -i //db:container_name mysql -u root -proot db_name in MYSQL_DATABASE < //db_name in MYSQL_DATABASE.sql
+```
 
-    sudo docker exec -it //db:container_name mysql -u root -proot -e "DROP DATABASE //db_name in MYSQL_DATABASE; CREATE DATABASE //db_name in MYSQL_DATABASE;"    // if table exisit
-    sudo docker exec -i //db:container_name mysql -u root -proot db_name in MYSQL_DATABASE < //db_name in MYSQL_DATABASE.sql
+**Example:**
+```bash
+sudo docker exec -it laravel_db mysql -u root -proot -e "DROP DATABASE vms; CREATE DATABASE vms;"
+sudo docker exec -i laravel_db mysql -u root -proot vms < ./db-init/vms.sql
+```
 
+---
 
-================================================================================
-                              EXAMPLE
-================================================================================
-
-    sudo docker exec -it laravel_db mysql -u root -proot -e "DROP DATABASE vms; CREATE DATABASE vms;"
-    sudo docker exec -i laravel_db mysql -u root -proot vms < ./db-init/vms.sql
-
-
---- Access your app ---
-
-    http://NAS-IP:8080
+## Step 3.2: Access your app
+Open your browser and navigate to:
+```
+http://NAS-IP:8080
+```

@@ -1,54 +1,392 @@
-================================================================================
-                              For File Sharing
-================================================================================
+# 📁 PART 1: FILE SHARING (Users & Groups)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
---- Admin Side ---
+> Objective: Create 3 local users + 1 admin group; set different passwords/quotas.
 
-    - Open "Users and Group"
-        - In Users, create a new user with username and password and permissions 
-          you want to assign (shared folder included)
+## Step 1.1: Create the Admin Group
+1. Open **Control Panel**
+2. Click **User & Group**
+3. Click the **Group** tab
+4. Click **Create**
+5. Fill in:
+   - **Group name:** `AdminGroup`
+   - **Description:** `Admin level group (optional)`
+6. Click **Next**
+7. On the **Assign users** step → skip for now (we'll add users after)
+8. On **Assign permissions** → check `Administrators`
+9. Click **Next** → **Done**
 
+---
 
---- User Side ---
+## Step 1.2: Create 3 Local Users
+Go to **Control Panel** → **User & Group** → **User** tab → **Create** for each:
 
-    - Connect on same network
+### User 1:
+| Field | Value |
+|---|---|
+| **Name** | `user1` |
+| **Password** | `User1@NAS2026` |
+| **Quota** | `50 GB` |
 
-    - Go to network tab
-        - For Mac: In Finder
-        - For Windows: In File Manager
+### User 2:
+| Field | Value |
+|---|---|
+| **Name** | `user2` |
+| **Password** | `User2@NAS2026` |
+| **Quota** | `100 GB` |
 
-    - Click on connect
-        - Add your username and password
+### User 3:
+| Field | Value |
+|---|---|
+| **Name** | `user3` |
+| **Password** | `User3@NAS2026` |
+| **Quota** | `150 GB` |
 
+---
 
-================================================================================
-                                 For Backup
-================================================================================
+## Step 1.3: How to Create Each User (Detailed)
+1. Click **Create**
+2. Enter name and password
+3. Click **Next**
+4. On **Join groups** → select `AdminGroup` for any user you want in the admin group
+5. Click **Next**
+6. On **Assign shared folder permissions** → skip or configure as needed
+7. Click **Next**
+8. On **User quota settings**:
+   - Select your volume
+   - Enter the quota size (`50GB` / `100GB` / `150GB`)
+9. Click **Next** → **Done**
 
---- Setup of Snapshot ---
+---
 
-    - Download Snapshot Replication
-    - Open Snapshot Replication
-    - Go to Snapshots
-    - Select the shared folder (example: "Projects")
-    - Click Settings
-    - Enable Snapshot Schedule
-        - Schedule:
-            Every 1 hour (business hours)
-            Or every 30 minutes (if very active environment)
-        - Retention policy example:
-            Keep 24 hourly snapshots
-            Keep 7 daily snapshots
-            Keep 4 weekly snapshots
+## Step 1.4: Assign Users to AdminGroup
+If you want all 3 users in the admin group:
+1. Go to **Group** tab
+2. Click on `AdminGroup`
+3. Click **Edit**
+4. Go to **Members** tab
+5. Check all 3 users → **Save**
 
+<br><br>
 
---- Restore Data ---
+# 📁 PART 2: SHARED FOLDERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    - Open Snapshot Replication
-    - Go to Snapshots
-    - Select shared folder
-    - Click Snapshot List
-    - Choose snapshot before deletion
-    - Click Browse
-    - Find deleted file/folder
-    - Click Restore
+> Objective: Create 4 shared folders with different permissions (read-only, read-write).
+
+## Plan: 4 Shared Folders
+
+| Folder Name | user1 | user2 | user3 |
+|---|---|---|---|
+| `PublicFolder` | Read/Write | Read/Write | Read/Write |
+| `ReadOnlyFolder` | Read Only | Read Only | Read Only |
+| `PrivateFolder` | Read/Write | No Access | No Access |
+| `SharedProjects` | Read Only | Read/Write | No Access |
+
+---
+
+## Step 2.1: Open Shared Folder settings
+1. Open **Control Panel**
+2. Click **Shared Folder**
+3. Click **Create** → **Create Shared Folder**
+
+---
+
+## Step 2.2: Fill in the details
+
+### Folder 1 — PublicFolder
+| Field | Value |
+|---|---|
+| **Name** | `PublicFolder` |
+| **Description** | Accessible by all users |
+| **Hide this folder** | No |
+| **Enable Recycle Bin** | ✅ Yes |
+
+1. Click **Next** → **Next** → reach **Permissions** tab
+2. Set permissions:
+   - `user1` → ✅ Read/Write
+   - `user2` → ✅ Read/Write
+   - `user3` → ✅ Read/Write
+
+### Folder 2 — ReadOnlyFolder
+| Field | Value |
+|---|---|
+| **Name** | `ReadOnlyFolder` |
+| **Description** | All users can read, none can write |
+
+- Permissions:
+  - `user1` → 👁️ Read Only
+  - `user2` → 👁️ Read Only
+  - `user3` → 👁️ Read Only
+
+### Folder 3 — PrivateFolder
+| Field | Value |
+|---|---|
+| **Name** | `PrivateFolder` |
+| **Description** | Only user1 has access |
+
+- Permissions:
+  - `user1` → ✅ Read/Write
+  - `user2` → 🚫 No Access
+  - `user3` → 🚫 No Access
+
+### Folder 4 — SharedProjects
+| Field | Value |
+|---|---|
+| **Name** | `SharedProjects` |
+| **Description** | Mixed permissions folder |
+
+- Permissions:
+  - `user1` → 👁️ Read Only
+  - `user2` → ✅ Read/Write
+  - `user3` → 🚫 No Access
+
+---
+
+## Step 2.3: Detailed Step-by-Step for Each Folder
+1. **Control Panel** → **Shared Folder** → **Create**
+2. Enter folder name and description
+3. Leave encryption off (for testing)
+4. Click **Next** through the options
+5. On the permissions screen:
+   - Find each user in the list
+   - Use the dropdown to set **Read/Write**, **Read Only**, or **No Access**
+6. Click **Apply** → **Done**
+7. Repeat for all 4 folders ✅
+
+<br><br>
+
+# 📊 PART 3: PERFORMANCE TESTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> Objective: Use Resource Monitor: observe CPU/RAM/disk usage during 4K random read test; identify bottleneck.
+
+## Step 3.1: Open Resource Monitor
+1. Click the main menu (grid icon top left)
+2. Open **Resource Monitor**
+3. You'll see real-time graphs for:
+   - CPU usage
+   - Memory (RAM) usage
+   - Network
+   - Disk utilization
+
+Keep this window open — you'll watch it during the test.
+
+---
+
+## Step 3.2: Install the 4K Random Read Test Tool
+Synology doesn't have a built-in 4K test tool, so you need to enable SSH and run it from terminal.
+
+**Enable SSH:**
+1. **Control Panel** → **Terminal & SNMP**
+2. Check **Enable SSH service**
+3. Port: `22` (default)
+4. Click **Apply**
+
+---
+
+## Step 3.3: Connect via SSH from your PC
+- On **Mac/Linux** — open Terminal and type:
+  ```bash
+  ssh admin@YOUR-NAS-IP
+  ```
+- On **Windows** — use PuTTY or Windows Terminal:
+  ```cmd
+  ssh admin@YOUR-NAS-IP
+  ```
+Enter your admin password when prompted.
+
+> **Note:** If any error occurs during connect like `can't connect to host`, try `ssh-keygen -R YOUR-NAS-IP`
+
+---
+
+## Step 3.4: Run the 4K Random Read Test
+Once connected via SSH, run this command:
+```bash
+sudo dd if=/dev/zero of=/volume1/testfile bs=4K count=100000 oflag=direct
+```
+This writes a test file. Then run the read test:
+```bash
+sudo dd if=/volume1/testfile of=/dev/null bs=4K iflag=direct
+```
+
+---
+
+## Step 3.5: Watch Resource Monitor During the Test
+While the test runs, watch these 4 things in Resource Monitor:
+
+| What to Watch | What it Means |
+|---|---|
+| **CPU hits 100%** | CPU is the bottleneck |
+| **RAM hits 100%** | Memory is the bottleneck |
+| **Disk at 100% busy** | Drive I/O is the bottleneck |
+| **Network maxed out** | Network is the bottleneck |
+
+---
+
+## Step 3.6: What to Expect with 2x Seagate HDD 465GB
+Since you have **spinning hard drives (HDD)** not SSDs:
+```
+4K Random Read on HDD
+        ↓
+Disk will likely hit 100% busy first
+        ↓
+CPU and RAM will stay relatively low
+        ↓
+Bottleneck = DISK (expected for HDD)
+```
+HDDs are typically slow at 4K random read — around 0.5–2 MB/s which is normal. SSDs solid-states would do 200–500 MB/s.
+
+---
+
+## Step 3.7: Clean Up After Test
+Remove the test file when done:
+```bash
+sudo rm /volume1/testfile
+```
+
+<br><br>
+
+# 🛡️ PART 4: BACKUP & RESTORE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Step 4.1: Setup of Snapshot
+1. Download **Snapshot Replication**
+2. Open **Snapshot Replication**
+3. Go to **Snapshots**
+4. Select the shared folder (example: "Projects")
+5. Click **Settings**
+6. Enable **Snapshot Schedule**
+   - **Schedule:**
+     - Every 1 hour (business hours)
+     - Or every 30 minutes (if very active environment)
+   - **Retention policy example:**
+     - Keep 24 hourly snapshots
+     - Keep 7 daily snapshots
+     - Keep 4 weekly snapshots
+
+---
+
+## Step 4.2: Restore Data
+1. Open **Snapshot Replication**
+2. Go to **Snapshots**
+3. Select shared folder
+4. Click **Snapshot List**
+5. Choose snapshot before deletion
+6. Click **Browse**
+7. Find deleted file/folder
+8. Click **Restore**
+
+<br><br>
+
+# 🐳 PART 5: DOCKER CONTAINERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Phase 5.1 — Set up Laravel Container
+1. Install **Container Manager** from Package Center
+2. Pull PHP + Laravel Docker image
+3. Map port `8080` to container
+4. Mount your Laravel project files to the container
+
+---
+
+## Phase 5.2 — Set up Chat Service Container
+1. Pull a lightweight chat image (e.g., Rocket.Chat or Mattermost)
+2. Map port `3000`
+
+---
+
+## Phase 5.3 — Web Station Portal
+1. Install **Web Station** from Package Center
+2. Create a custom HTML dashboard page with:
+   - Login system
+   - Links/iframes to all services
+
+---
+
+## Phase 5.4 — Reverse Proxy (optional but clean)
+1. Route everything through Web Station so users just go to one IP
+
+---
+
+## Phase 5.5: Create a docker-compose.yml for Laravel
+Once files are uploaded, connect via SSH and run:
+```bash
+cat > /volume1/web/laravel/docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  app:
+    image: php:8.2-apache
+    container_name: laravel_app
+    ports:
+      - "8080:80"
+    volumes:
+      - /volume1/web/laravel:/var/www/html
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html/public
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: laravel_db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel123
+    volumes:
+      - /volume1/web/mysql:/var/lib/mysql
+    restart: unless-stopped
+
+EOF
+```
+
+---
+
+## Phase 5.6: Run the Container via Container Manager
+1. Open **Container Manager**
+2. Click **Project** on the left
+3. Click **Create**
+4. Fill in:
+
+| Field | Value |
+|---|---|
+| **Project name** | `laravel` |
+| **Path** | `/volume1/web/laravel` |
+| **docker-compose.yml** | *(auto detected)* |
+
+5. Click **Next** → **Done**
+6. Container Manager will pull the images and start everything ✅
+
+---
+
+## Phase 5.7: Test Laravel is Running
+Open your browser and go to:
+```
+http://192.168.10.83:8080
+```
+You should see your Laravel app! 🎉
+
+<br><br>
+
+# 💻 PART 6: USER SIDE CONNECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Step 6.1: Connect on same network
+Ensure your machine is on the same local network as the NAS.
+
+---
+
+## Step 6.2: Locate the NAS in Network
+- For **Mac:** Open **Finder**, click on **Network** in the sidebar.
+- For **Windows:** Open **File Explorer**, click on **Network** in the sidebar.
+
+---
+
+## Step 6.3: Connect and Authenticate
+1. Double click on the NAS name to connect.
+2. Click on **connect**.
+3. Add your **username** and **password**.

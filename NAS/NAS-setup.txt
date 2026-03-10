@@ -1,13 +1,59 @@
-================================================================================
-                                NAS Setup
-================================================================================
+# 🛠️ PART 1: NAS INITIALIZATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
---- Step 1: Start NAS ---
+> Objective: Setup and install DSM on the new NAS.
 
-    1. Open your browser
-    2. Go to find.synology.com
-    3. Your NAS will show up as "Not Installed"
-    4. Click it to start fresh DSM installation
+## Step 1.1: Start NAS
+1. Open your browser
+2. Go to `find.synology.com`
+3. Your NAS will show up as "Not Installed"
+4. Click it to start fresh DSM installation
 
-    Note: If you cannot find it in find.synology.com, use Synology Assistant 
-          from synology.com or try in another browser
+> **Note:** If you cannot find it in `find.synology.com`, use **Synology Assistant** from synology.com or try in another browser.
+
+---
+
+## Step 1.2: Install DSM
+It will download and install DSM (takes 5–10 minutes)
+1. NAS will reboot again automatically
+2. You'll be asked to:
+   - Create an admin username & password
+   - Set your NAS name
+   - Configure basic network settings
+   - Set up Synology account (optional but recommended)
+
+<br><br>
+
+# 💾 PART 2: STORAGE SETUP WIZARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> Objective: Configure hard drives and volumes for storage.
+
+## Step 2.1: Choose RAID type
+This determines how your drives are configured. Since you have 2 drives, your options will be:
+
+| RAID Type | What it does | Best for |
+|---|---|---|
+| **SHR** (Synology Hybrid RAID) | 1 drive for data, 1 for protection | ✅ Recommended for most users |
+| **RAID 1** | Mirror — both drives have same data | Maximum safety |
+| **RAID 0** | Combines both drives, no protection | Maximum speed/space, no backup |
+| **Basic** | Each drive independent | Testing only |
+
+- 👉 **For testing** → pick **SHR** or **Basic**
+- 👉 **For production** → pick **SHR** or **RAID 1**
+
+---
+
+## Step 2.2: Select your drives
+Just select both **Drive 3** and **Drive 4** (your two Seagate 465GB drives).
+
+---
+
+## Step 2.3: Choose file system
+- Pick **Btrfs** (recommended — has snapshots and self-healing)
+- Or **ext4** (simpler, slightly faster)
+
+---
+
+## Step 2.4: Allocate volume size
+Just leave it at maximum for testing (can also specify for creating different volumes like `volume 1` 250 GB, `volume 2` 100 GB, `volume 3` 100 GB, 50 GB free space).

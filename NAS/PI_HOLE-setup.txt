@@ -1,0 +1,105 @@
+# 🐳 PART 1: DOCKER COMPOSE SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> Objective: Setup the Pi-hole container in Synology Container Manager.
+
+## Step 1.1: Open Container Manager
+1. Open **DSM** → **Container Manager**
+2. Click **Project** on the left
+3. Click **Create**
+
+---
+
+## Step 1.2: Create the Pi-hole Project
+Fill in:
+| Field | Value |
+|---|---|
+| **Project name** | `pihole` |
+| **Path** | `/volume1/docker/pihole` |
+
+Then paste this `docker-compose.yml`:
+```yaml
+version: "3.9"
+
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "8053:80/tcp"
+    environment:
+        TZ: Asia/Kolkata
+        WEBPASSWORD: "admin123"
+        DNSMASQ_LISTENING: all
+        FTLCONF_LOCAL_IPV4: 192.168.10.83
+        PIHOLE_DNS_: 1.1.1.1;8.8.8.8
+    volumes:
+      - /volume1/docker/pihole/etc-pihole:/etc/pihole
+      - /volume1/docker/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+```
+
+---
+
+## Step 1.3: Create the folders first via SSH
+```bash
+mkdir -p /volume1/docker/pihole/etc-pihole
+mkdir -p /volume1/docker/pihole/etc-dnsmasq.d
+```
+
+<br><br>
+
+# 🚀 PART 2: BUILD & ACCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Step 2.1: Build and Start
+1. Click **Next** → **Done** in Container Manager
+2. It will pull the Pi-hole image and start
+3. Wait 2–3 minutes for it to initialize
+
+---
+
+## Step 2.2: Access Pi-hole Admin Panel
+Open browser:
+```
+http://192.168.10.83:8053/admin
+```
+Login password: `admin123` (change this!)
+
+<br><br>
+
+# 🌐 PART 3: NETWORK DNS CONFIGURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> Objective: Point Your Network DNS to Pi-hole so that all devices use it.
+
+## Step 3.1: Update Router DNS
+This is the most important step — tell your router to use Pi-hole as DNS:
+1. Log into your **router admin panel** (usually `192.168.10.1`)
+2. Find **DHCP Settings** or **DNS Settings**
+3. Set **Primary DNS** to:
+   ```
+   192.168.10.83
+   ```
+4. Save and restart router
+
+Now ALL devices on your network will go through Pi-hole! ✅
+
+---
+
+## Step 3.2: What Pi-hole Will Do
+```
+Device requests ads.google.com
+        ↓
+Router sends DNS query to Pi-hole (192.168.10.83)
+        ↓
+Pi-hole checks blocklist
+        ↓
+Blocked → returns empty response
+        ↓
+Ad never loads on any device ✅
+```
