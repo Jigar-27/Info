@@ -1,28 +1,36 @@
-| -------------------------------------------------For File Sharing------------------------------------------------------------------------- |
+================================================================================
+                              For File Sharing
+================================================================================
 
-Admin Side:
+--- Admin Side ---
 
-    - Open Users and Group
-        - In Users create a new user with user name and password and permissiosns you want to assign(shared folder included)
+    - Open "Users and Group"
+        - In Users, create a new user with username and password and permissions 
+          you want to assign (shared folder included)
 
-User Side:
+
+--- User Side ---
 
     - Connect on same network
 
-    - Go To network tab
-        - For mac in finder
-        - For windows in File Manager
+    - Go to network tab
+        - For Mac: In Finder
+        - For Windows: In File Manager
 
     - Click on connect
-        - Add your user name and password
+        - Add your username and password
 
-| -------------------------------------------------For Backup------------------------------------------------------------------------- |
 
-- Setup of Snapshot:
-    - Download Snapshot Replication:
+================================================================================
+                                 For Backup
+================================================================================
+
+--- Setup of Snapshot ---
+
+    - Download Snapshot Replication
     - Open Snapshot Replication
     - Go to Snapshots
-    - Select the shared folder (example: “Projects”)
+    - Select the shared folder (example: "Projects")
     - Click Settings
     - Enable Snapshot Schedule
         - Schedule:
@@ -33,7 +41,9 @@ User Side:
             Keep 7 daily snapshots
             Keep 4 weekly snapshots
 
-- Restore Data:
+
+--- Restore Data ---
+
     - Open Snapshot Replication
     - Go to Snapshots
     - Select shared folder
