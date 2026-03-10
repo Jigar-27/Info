@@ -1,0 +1,40 @@
+//docker-compose.yml
+
+version: '3.1' //version of your docker
+services:
+    wordpress:
+        image: wordpress //any wordpress version you want to use
+        restart: always
+        ports:
+            - 8080:80 //your site will run on first number's port 
+        environment:
+            WORDPRESS_DB_HOST: db   
+            WORDPRESS_DB_USER: wp    
+            WORDPRESS_DB_PASSWORD: root
+            WORDPRESS_DB_NAME: wp
+        volumes:
+            - ./wordpress:/var/www/html     //save change and reflect in next compile
+
+    db:
+        platform: linux/x86_64  //if it's giving no matching manifest for linux/arm64/v8 in the manifest list entries error
+        image: mysql:5.7
+        restart: always
+        environment:
+            MYSQL_DATABASE: wp
+            MYSQL_USER: wp
+            MYSQL_PASSWORD: root
+            MYSQL_RANDOM_ROOT_PASSWORD: "1"
+        volumes: 
+            - ./db:/var/lib/mysql
+            - ./schema/:/docker-entrypoint-initdb.d     //create folder schema and put your db's zip file and it will auotmatically load it
+
+    phpmyadmin:
+        container_name: phpmyadmin
+        image: phpmyadmin
+        ports:
+            - 8081:80
+        # environment:
+        #     - PMA_ARBITRARY=1
+volumes:
+    wordpress:
+    db:

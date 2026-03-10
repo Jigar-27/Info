@@ -1,0 +1,32 @@
+Connect to your network
+
+upload you project in //name_of_project folder
+make a //data folder
+upload your Dockerfile
+
+upon creting project make .yml file and paste you code in it
+
+then create project
+
+ssh //your-username@192.168.10.83
+
+ssh Jigar_ITPL@192.168.10.83
+
+sudo docker exec -it //app:container_name php artisan key:generate
+sudo docker exec -it laravel_app php artisan key:generate
+
+sudo docker exec -it //app:container_name chmod -R 777 storage bootstrap/cach
+
+sudo docker exec -it //app:container_name sh
+sudo docker exec -it laravel_app sh
+
+php artisan migrate
+
+sudo docker exec -it //db:container_name mysql -u root -proot -e "DROP DATABASE //db_name in MYSQL_DATABASE; CREATE DATABASE //db_name in MYSQL_DATABASE;" //if table exisit
+sudo docker exec -i //db:container_name mysql -u root -proot db_name in MYSQL_DATABASE < //db_name in MYSQL_DATABASE.sql
+
+sudo docker exec -it laravel_db mysql -u root -proot -e "DROP DATABASE vms; CREATE DATABASE vms;"
+sudo docker exec -i laravel_db mysql -u root -proot vms < ./db-init/vms.sql
+
+
+http://NAS-IP:8080

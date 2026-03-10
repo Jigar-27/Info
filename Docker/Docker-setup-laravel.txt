@@ -1,0 +1,126 @@
+Dockerfile
+
+FROM php:8.4-apache
+
+# System deps
+RUN apt-get update && apt-get install -y git unzip zip default-mysql-client libzip-dev
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+RUN apt-get update && apt-get install -y libpq-dev 
+
+# PHP extensions
+RUN docker-php-ext-install pdo pdo_mysql zip
+
+# Apache rewrite
+RUN a2enmod rewrite
+
+# Set Apache root to Laravel public
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+    /etc/apache2/sites-available/*.conf \
+    /etc/apache2/apache2.conf \
+    /etc/apache2/conf-available/*.conf
+
+# Install composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+
+Docker-composer.yml
+
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: laravel_app
+    ports:
+      - "8080:80"
+    volumes:
+      - ./laravel:/var/www/html             // ./laravel = file which has laravel code
+    depends_on:
+      db:
+        condition: service_healthy
+
+    networks:
+      - laravel-network
+
+  db:
+    image: mysql:8.0
+    container_name: laravel_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: //db_name in MYSQL_DATABASE
+    networks:
+      - laravel-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password
+
+phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    platform: linux/amd64
+    container_name: laravel_pma
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      - db
+    networks:
+      - laravel-network
+
+networks:
+  laravel-network:
+
+volumes:
+  mysql_data:
+
+
+## setup .env file
+
+APP_NAME=Laravel // name of your app
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://localhost:8080
+
+DB_CONNECTION=mysql
+DB_HOST=db  //name of the host database   Note :: host name can not be localhost
+DB_PORT=3306
+DB_DATABASE=//db_name in MYSQL_DATABASE
+DB_USERNAME=root
+DB_PASSWORD=root // password is compulsary even for windows
+
+docker exec -it //app:container_name php artisan key:generate
+
+docker exec -it //app:container_name chmod -R 777 storage bootstrap/cache
+
+## run artisan command 
+
+docker exec -it //app:container_name sh
+
+docker exec -it laravel_app sh
+
+php artisan migrate
+
+## inside the container load DATABASE
+
+docker exec -it //db:container_name mysql -u root -proot -e "DROP DATABASE //db_name in MYSQL_DATABASE; CREATE DATABASE //db_name in MYSQL_DATABASE;" //if table exisit
+docker exec -i //db:container_name mysql -u root -proot db_name in MYSQL_DATABASE < //db_name in MYSQL_DATABASE.sql //load sql file for mac and linux
+Get-Content MYSQL_DATABASE | docker exec -i //db:container_name mysql -u root -proot //db:container_name(alias) //load sql file for windows
+
+
+####### EXAMPLE #############################################################################
+docker exec -it laravel_db mysql -u root -proot -e "DROP DATABASE vms; CREATE DATABASE vms;"
+docker exec -i laravel_db mysql -u root -proot vms < vms.sql  //for mac
+Get-Content vms.sql | docker exec -i laravel_db mysql -u root -proot vms  //for windows

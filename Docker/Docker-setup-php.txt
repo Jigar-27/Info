@@ -1,0 +1,40 @@
+//Dockerfile
+
+FROM php:8.0-apache   //Your php version's image file
+COPY ./docker /var/www/html/  //copy your php code's path in apche server replace ./docker with your path
+RUN docker-php-ext-install mysqli // install mysqli for executing php querys
+EXPOSE  80 // port on which you want to run you site
+
+//docker-compose.yml
+
+version: '3'  // version of your docker
+services:
+    web:
+        container_name: php-apache // this will create a container by this name
+        build: .  // this will load your Dockerfile
+        volumes:
+            - ./docker:/var/www/html/   //save change and reflect in next compile 
+        ports:
+            - 80:80  //your site will run on first number's port 
+    db:
+        container_name: db
+        image: mysql:latest //use any version's image file you want to use
+        volumes: 
+            - "./db:/var/lib/mysql"
+        restart: always
+        environment:
+            - MYSQL_ROOT_PASSWORD=root      //root pasword for your db
+            - MYSQL_DATABASE=project        //your db name
+            - MYSQL_USER=root               //user for your db(this is not a root user it can access only this db's tabel)
+            - MYSQL_ALLOW_EMPTY_PASSWORD=1  
+            - MYSQL_PASSWORD=user           //user's password
+            - MYSQL_ROOT_HOST=localhost
+        ports:
+            - "3306:3306" //mysql's default port
+    phpmyadmin:
+        container_name: phpmyadmin
+        image: phpmyadmin
+        ports:
+            - 9000:80 
+        environment:
+            - PMA_ARBITRARY=1

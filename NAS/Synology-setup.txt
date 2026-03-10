@@ -1,0 +1,44 @@
+| -------------------------------------------------For File Sharing------------------------------------------------------------------------- |
+
+Admin Side:
+
+    - Open Users and Group
+        - In Users create a new user with user name and password and permissiosns you want to assign(shared folder included)
+
+User Side:
+
+    - Connect on same network
+
+    - Go To network tab
+        - For mac in finder
+        - For windows in File Manager
+
+    - Click on connect
+        - Add your user name and password
+
+| -------------------------------------------------For Backup------------------------------------------------------------------------- |
+
+- Setup of Snapshot:
+    - Download Snapshot Replication:
+    - Open Snapshot Replication
+    - Go to Snapshots
+    - Select the shared folder (example: “Projects”)
+    - Click Settings
+    - Enable Snapshot Schedule
+        - Schedule:
+            Every 1 hour (business hours)
+            Or every 30 minutes (if very active environment)
+        - Retention policy example:
+            Keep 24 hourly snapshots
+            Keep 7 daily snapshots
+            Keep 4 weekly snapshots
+
+- Restore Data:
+    - Open Snapshot Replication
+    - Go to Snapshots
+    - Select shared folder
+    - Click Snapshot List
+    - Choose snapshot before deletion
+    - Click Browse
+    - Find deleted file/folder
+    - Click Restore

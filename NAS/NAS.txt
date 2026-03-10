@@ -1,0 +1,8 @@
+Step 1: Start NAS
+
+    1. Open your browser
+    2. Go to find.synology.com
+    3. Your NAS will show up as "Not Installed"
+    4. Click it to start fresh DSM installation
+
+    Note: if can not find in find.synology.com use Synology Assistant from synology.com or try in another browser
