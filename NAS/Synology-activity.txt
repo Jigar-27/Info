@@ -25,21 +25,21 @@ Go to **Control Panel** → **User & Group** → **User** tab → **Create** for
 | Field | Value |
 |---|---|
 | **Name** | `user1` |
-| **Password** | `User1@NAS2026` |
+| **Password** | `User1@<YourPassword>` |
 | **Quota** | `50 GB` |
 
 ### User 2:
 | Field | Value |
 |---|---|
 | **Name** | `user2` |
-| **Password** | `User2@NAS2026` |
+| **Password** | `User2@<YourPassword>` |
 | **Quota** | `100 GB` |
 
 ### User 3:
 | Field | Value |
 |---|---|
 | **Name** | `user3` |
-| **Password** | `User3@NAS2026` |
+| **Password** | `User3@<YourPassword>` |
 | **Quota** | `150 GB` |
 
 ---
@@ -366,7 +366,7 @@ EOF
 ## Phase 5.7: Test Laravel is Running
 Open your browser and go to:
 ```
-http://192.168.10.83:8080
+http://<NAS-IP>:8080
 ```
 You should see your Laravel app! 🎉
 

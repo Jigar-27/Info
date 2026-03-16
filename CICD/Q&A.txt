@@ -1,0 +1,671 @@
+================================================================================
+                  Real World Deployment Problems & Solutions
+================================================================================
+
+This is a comprehensive deployment troubleshooting guide for detecting, fixing, and preventing real-world deployment issues.
+
+
+================================================================================
+                          Part 1: Git & Branching Issues
+================================================================================
+
+## 1. Wrong Branch Checked Out
+The Problem:
+Your server is on `develop` but you deployed to `main`. Changes go live on the wrong branch.
+
+How to detect:
+    git branch
+    # * develop        ← wrong! should be main
+    #   main
+
+Fix:
+    git checkout main
+    git pull origin main
+
+How pros prevent this:
+Add a branch check at the start of every deploy script:
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    EXPECTED_BRANCH="main"
+
+    if [ "$CURRENT_BRANCH" != "$EXPECTED_BRANCH" ]; then
+      echo "❌ Wrong branch! On $CURRENT_BRANCH, expected $EXPECTED_BRANCH"
+      exit 1  # stops entire deployment
+    fi
+
+    echo "✅ Correct branch: $CURRENT_BRANCH"
+
+Note: In GitHub Actions, the runner always checks out fresh so this problem doesn't exist there — it's mainly a manual server issue.
+
+
+## 2. Remote Branch Deleted
+The Problem:
+Someone deleted a branch on GitHub. Your server still references it. `git pull` fails.
+    git pull origin feature/old-branch
+    # error: remote branch feature/old-branch not found
+
+Fix — prune stale remote references:
+    git fetch --prune
+    # Removes all local references to deleted remote branches
+
+    git branch -a
+    # Now shows only branches that actually exist remotely
+
+Set this globally so it always auto-prunes:
+    git config --global fetch.prune true
+    # Now every `git fetch` and `git pull` auto-cleans dead branches
+
+If your deployment script was pointing to a deleted branch:
+    git checkout main
+    git branch --set-upstream-to=origin/main main
+    git pull
+
+
+## 3. Detached HEAD State
+The Problem:
+Git is not on any branch — it's pointing directly to a commit. This happens when someone ran `git checkout <commit-hash>` on the server.
+    git status
+    # HEAD detached at a3f8c21
+    # nothing to commit, working tree clean
+
+`git pull` does nothing useful here. You're floating in space.
+
+Fix:
+    # Go back to main and pull
+    git checkout main
+    git pull origin main
+
+If you had changes in detached HEAD you want to save:
+    # Create a branch from where you are
+    git checkout -b rescue-branch
+    git checkout main
+    git merge rescue-branch
+
+How pros prevent it:
+Same branch check script from #1 catches this:
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    if [ "$CURRENT_BRANCH" == "HEAD" ]; then
+      echo "❌ Detached HEAD state detected!"
+      exit 1
+    fi
+
+
+## 4. Merge Conflicts During Pull
+The Problem:
+The server has local changes (someone edited a file directly on the server), and those conflict with incoming changes from `git pull`.
+    git pull origin main
+    # CONFLICT (content): Merge conflict in app/Http/Controllers/UserController.php
+    # Automatic merge failed; fix conflicts then commit the result.
+
+The golden rule:
+Never edit files directly on the production server. All changes go through Git.
+
+Fix Option A — Discard server changes (most common in production):
+    git fetch origin
+    git reset --hard origin/main
+    # ⚠️ Destroys any local changes on server — use only if you don't need them
+
+Fix Option B — Stash server changes, pull, reapply:
+    git stash              # saves local changes temporarily
+    git pull origin main   # pulls cleanly
+    git stash pop          # reapplies your saved changes
+    # if conflict appears now — resolve manually
+
+Fix Option C — See what's different before deciding:
+    git diff origin/main   # shows exactly what conflicts exist
+    git status             # shows which files are conflicted
+
+In your deploy script, use reset --hard so conflicts never block deployment:
+    git fetch origin
+    git reset --hard origin/main  # server always matches remote exactly
+    git clean -fd                 # removes untracked files too
+
+
+## 5. Remote Repository URL Changed (Optional Case)
+The Problem:
+Your GitHub repo was renamed, transferred to an org, or moved from HTTPS to SSH. Server's remote URL is now wrong.
+    git pull
+    # fatal: repository 'https://github.com/oldname/repo.git/' not found
+
+Check current remote:
+    git remote -v
+    # origin  https://github.com/oldname/repo.git (fetch)   ← outdated
+    # origin  https://github.com/oldname/repo.git (push)    ← outdated
+
+Fix:
+    # Update to new URL
+    git remote set-url origin https://github.com/newname/repo.git
+
+    # Verify
+    git remote -v
+    # origin  https://github.com/newname/repo.git (fetch)  ✅
+
+    # Now pull works
+    git pull origin main
+
+Switch from HTTPS to SSH (recommended for servers):
+    git remote set-url origin git@github.com:username/repo.git
+    # SSH never asks for username/password — uses SSH key instead
+
+
+## 6. Local Code and Remote Have Diverged / Uncommitted Changes on Server
+The Problem:
+Someone made hotfixes directly on the server and committed them. Now the server's Git history has diverged from GitHub.
+    git pull origin main
+    # error: Your local branch and 'origin/main' have diverged
+    # have 2 and 3 different commits each
+
+Visualized:
+    GitHub:  A → B → C → D → E  (main)
+    Server:  A → B → C → X → Y  (someone committed directly on server)
+                          ↑
+                          diverged here
+
+Fix Option A — Server must always match remote (production standard):
+    git fetch origin
+    git reset --hard origin/main
+    # Server is now identical to GitHub. X and Y commits are gone.
+
+Fix Option B — If those server commits are important:
+    # First, push server commits to a rescue branch on GitHub
+    git push origin HEAD:rescue/hotfix-$(date +%Y%m%d)
+
+    # Then reset to main
+    git reset --hard origin/main
+
+    # Now create a proper PR from rescue branch → main on GitHub
+
+The real fix is process:
+Hotfixes should go through Git on your local machine → push to GitHub → deploy. Never commit on the server.
+
+
+================================================================================
+                    Part 2: Laravel Server Operations & Errors
+================================================================================
+
+## 7. File Permissions — Laravel Can't Write to Storage or Bootstrap/Cache
+The Problem:
+After `git pull`, Laravel throws errors:
+    The stream or file "storage/logs/laravel.log" could not be opened: 
+    failed to open stream: Permission denied
+
+Why it happens:
+Git doesn't preserve file permissions. After a pull, folders might be owned by `root` instead of the web server user (`www-data`).
+
+Immediate Fix:
+    # Give web server ownership
+    sudo chown -R www-data:www-data /var/www/myapp/storage
+    sudo chown -R www-data:www-data /var/www/myapp/bootstrap/cache
+
+    # Set correct permissions
+    sudo chmod -R 775 /var/www/myapp/storage
+    sudo chmod -R 775 /var/www/myapp/bootstrap/cache
+
+Add to every deploy script so it runs automatically:
+    # In your deploy script
+    php artisan storage:link
+    chmod -R 775 storage bootstrap/cache
+    chown -R www-data:www-data storage bootstrap/cache
+
+Full permission setup for Laravel:
+    # Directories need execute permission to be entered
+    find /var/www/myapp -type d -exec chmod 755 {} \;
+
+    # Files just need read/write
+    find /var/www/myapp -type f -exec chmod 644 {} \;
+
+    # Storage and cache need write permission for web server
+    chmod -R 775 storage bootstrap/cache
+    chown -R www-data:www-data storage bootstrap/cache
+
+
+## 8. Stale Caches After Pull
+The Problem:
+You deployed new config, routes, or views but Laravel is still serving the old cached versions. Users see old behavior.
+
+Why it happens:
+Laravel caches config/routes/views to boost performance. These cached files live in `bootstrap/cache/` and `storage/framework/`. After a pull, the cache is out of sync with new code.
+
+Fix — always run these after every pull:
+    php artisan config:clear    # clears config cache
+    php artisan config:cache    # rebuilds config cache fresh
+
+    php artisan route:clear     # clears route cache
+    php artisan route:cache     # rebuilds route cache fresh
+
+    php artisan view:clear      # clears compiled blade views
+    php artisan view:cache      # rebuilds view cache fresh
+
+    php artisan event:clear     # clears event cache
+    php artisan event:cache     # rebuilds event cache
+
+    php artisan optimize:clear  # clears everything at once
+    php artisan optimize        # rebuilds everything at once
+
+In production deploy script, just use:
+    php artisan optimize:clear
+    php artisan optimize
+
+Gotcha — `route:cache` breaks with closures:
+    // ❌ This will break route:cache
+    Route::get('/', function () {
+        return view('welcome');
+    });
+
+    // ✅ Always use controllers in production
+    Route::get('/', [HomeController::class, 'index']);
+
+
+## 9. Database Migrations Required
+The Problem:
+New code has migrations but they haven't been run. App crashes because it's looking for columns/tables that don't exist yet.
+
+Basic fix:
+    php artisan migrate --force
+    # --force is required in production (skips the "are you sure?" prompt)
+
+The real problem — running migrations has risks:
+- What if migration fails halfway?
+- What if new code runs before migration completes?
+- What if you need to rollback?
+
+How pros handle it — migration strategies:
+
+Strategy 1: Expand and Contract (zero downtime)
+1. Deploy migration that ADDS new column (backward compatible) — old code still works (ignores new column).
+2. Deploy new code that USES new column — both old and new code work.
+3. Deploy migration that REMOVES old column — only after you're sure new code is stable.
+
+Strategy 2: Maintenance mode during migration:
+    php artisan down --message="Upgrading, back in 2 mins" --retry=60
+    git pull origin main
+    composer install --no-dev
+    php artisan migrate --force
+    php artisan optimize
+    php artisan up
+
+Always have rollback ready:
+    // Every migration should have a proper down() method
+    public function down(): void
+    {
+        Schema::dropColumn('users', 'new_column');
+    }
+
+    # Rollback last migration
+    php artisan migrate:rollback
+
+    # Rollback last 3 migrations
+    php artisan migrate:rollback --step=3
+
+
+## 10. Seeder Files Need to Run
+The Problem:
+New deployment needs specific data in the database — lookup tables, default roles, config values, etc.
+
+The wrong way:
+    php artisan db:seed  # ❌ runs ALL seeders — can duplicate data
+
+The right way — run specific seeders:
+    php artisan db:seed --class=RolesAndPermissionsSeeder
+    php artisan db:seed --class=CountriesSeeder
+
+Best practice — use migrations for required data, not seeders:
+    // In a migration file — this data is required for the app to work
+    public function up(): void
+    {
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+        });
+
+        // Insert required data inside the migration itself
+        DB::table('roles')->insert([
+            ['name' => 'admin'],
+            ['name' => 'user'],
+        ]);
+    }
+This way `php artisan migrate` handles everything — no separate seeder step.
+
+For seeders that ARE safe to re-run, use `updateOrCreate`:
+    public function run(): void
+    {
+        // Safe to run multiple times — won't duplicate
+        Role::updateOrCreate(
+            ['name' => 'admin'],
+            ['guard_name' => 'web']
+        );
+    }
+
+
+## 11. Composer Dependencies Changed But Not Installed
+The Problem:
+`composer.json` has new packages, but `vendor/` is missing or outdated. App crashes on boot.
+    Class "Spatie\Permission\PermissionServiceProvider" not found
+
+Fix:
+    composer install --no-dev --optimize-autoloader
+    # --no-dev     = skip development packages (testing tools etc.)
+    # --optimize   = generates optimized class autoload map (faster)
+
+Never run `composer update` on production:
+    composer update  # ❌ upgrades packages to latest versions
+                     #    can break things unpredictably on production
+
+    composer install # ✅ installs exact versions from composer.lock
+                     #    same versions every time, predictable
+
+`composer.lock` is the key:
+- `composer.json` → "I want laravel/framework ^10.0" (range)
+- `composer.lock` → "Install laravel/framework 10.48.4 exactly" (pinned)
+
+Always commit `composer.lock`. Never commit `vendor/`.
+
+In deploy script:
+    composer install --no-dev --optimize-autoloader --no-interaction
+
+
+================================================================================
+                    Part 3: Hosting & Environment Challenges
+================================================================================
+
+## 12. cPanel Restrictions Prevent Git Commands
+The Problem:
+InfinityFree, shared hosts — no SSH, no terminal, `shell_exec` disabled. You physically cannot run Git on the server.
+
+Workarounds:
+
+Option A — cPanel Git Version Control (if available):
+Some cPanel hosts have a built-in Git panel. You connect your GitHub repo there and it pulls on demand. No SSH needed.
+
+Option B — GitHub Actions deploys via FTP:
+    # Server never runs Git. GitHub Actions does everything locally
+    # and uploads only changed files via FTP.
+    - uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        exclude: |
+          **/vendor/**      # never upload vendor
+          **/.git/**
+
+Option C — PHP-based pull script (use carefully):
+    <?php
+    // deploy.php — protected by a secret token
+    $token = $_GET['token'] ?? '';
+    if ($token !== 'your-secret-token-here') {
+        die('Unauthorized');
+    }
+
+    $output = shell_exec('cd /home/user/public_html && git pull 2>&1');
+    echo "<pre>$output</pre>";
+Note: Most shared hosts block `shell_exec`.
+
+Real answer: cPanel shared hosting and proper CI/CD are fundamentally incompatible for Laravel. The solution is to move to a VPS.
+
+
+## 13. Disk Full — Pull, Composer, or Artisan Fails
+The Problem:
+    git pull
+    # error: unable to write file: No space left on device
+
+    composer install
+    # [RuntimeException] Could not write to /var/www/myapp/vendor
+
+Check disk usage:
+    df -h
+    # Filesystem      Size  Used Avail Use%
+    # /dev/sda1        20G   20G     0  100%  ← full!
+
+    # Find what's eating space
+    du -sh /var/www/myapp/*  | sort -rh | head -20
+    du -sh /var/log/*        | sort -rh | head -20
+
+Common culprits on Laravel servers:
+    # 1. Laravel logs grown huge
+    ls -lh storage/logs/
+    truncate -s 0 storage/logs/laravel.log  # empties log without deleting
+
+    # 2. Old releases piled up (if using Envoyer/Deployer)
+    ls -lh releases/
+    rm -rf releases/2024-01-01-*  # delete old ones, keep last 3
+
+    # 3. System logs
+    sudo journalctl --disk-usage
+    sudo journalctl --vacuum-size=500M  # trim to 500MB
+
+    # 4. Old composer cache
+    composer clear-cache
+
+    # 5. Docker images (if using Docker)
+    docker system prune -a
+
+Prevent logs from growing forever (set log rotation in Laravel):
+    // config/logging.php
+    'daily' => [
+        'driver' => 'daily',
+        'days'   => 14,    // keeps only 14 days of logs
+    ],
+
+
+## 16. Multiple Environments — Staging and Production
+The Problem:
+You need staging to test changes before hitting production. Both need separate databases, configs, and deployments.
+
+Branch strategy:
+- `develop` → staging server (auto deploy on push)
+- `main` → production server (auto deploy on merge)
+
+GitHub Actions for both environments:
+    name: Deploy
+
+    on:
+      push:
+        branches: [main, develop]
+
+    jobs:
+      deploy-staging:
+        if: github.ref == 'refs/heads/develop'
+        runs-on: ubuntu-latest
+        steps:
+          - uses: appleboy/ssh-action@v1
+            with:
+              host: ${{ secrets.STAGING_SERVER_IP }}
+              username: ${{ secrets.SERVER_USER }}
+              key: ${{ secrets.SSH_PRIVATE_KEY }}
+              script: |
+                cd /var/www/staging
+                git pull origin develop
+                composer install        # dev deps on staging
+                php artisan migrate --force
+                php artisan optimize
+
+      deploy-production:
+        if: github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+        steps:
+          - uses: appleboy/ssh-action@v1
+            with:
+              host: ${{ secrets.PROD_SERVER_IP }}
+              username: ${{ secrets.SERVER_USER }}
+              key: ${{ secrets.SSH_PRIVATE_KEY }}
+              script: |
+                cd /var/www/production
+                git pull origin main
+                composer install --no-dev  # no dev deps on production
+                php artisan migrate --force
+                php artisan optimize
+
+Separate `.env` per environment:
+    /var/www/staging/.env      → DB_DATABASE=myapp_staging
+    /var/www/production/.env   → DB_DATABASE=myapp_production
+
+`.env` is never in Git. It lives on the server and never gets overwritten by deployments.
+
+
+================================================================================
+               Part 4: Advanced Deployment & Rollback Strategies
+================================================================================
+
+## 14. Rollback After a Failed Deployment
+The Problem:
+You deployed, something broke, users are affected. You need to go back — fast.
+
+The simple way — Git revert:
+    # See recent commits
+    git log --oneline
+    # d9e4f12 Added payment gateway  ← broke everything
+    # a3f8c21 Fixed user profile     ← last good state
+
+    # Revert to last good commit
+    git reset --hard a3f8c21
+    # Force push to remote (coordinate with team first!)
+    git push origin main --force
+    # Redeploy from CI
+
+The pro way — Symlink-based rollback (Envoyer/Deployer):
+    releases/
+    ├── 2024-01-03-090000/   ← broke this
+    ├── 2024-01-02-150000/   ← last good one
+    └── 2024-01-01-120000/
+    current → releases/2024-01-03-090000   ← just change this symlink!
+
+    # Rollback is instant — just point symlink to previous release
+    ln -sfn /var/www/myapp/releases/2024-01-02-150000 /var/www/myapp/current
+    # Done. Zero downtime. Takes milliseconds.
+
+Database rollback is harder:
+    php artisan migrate:rollback  # rolls back last migration batch
+
+Note: If data was inserted/deleted — that's gone. This is why database backups before every deploy are critical.
+
+Always backup DB before deploying:
+    # In deploy script, before anything else:
+    mysqldump -u user -p mydb > /backups/pre-deploy-$(date +%Y%m%d-%H%M%S).sql
+
+
+## 15. Queued Jobs or Mail While Processing
+The Problem:
+You deploy mid-flight while jobs are being processed. The job code changes underneath a running job. Jobs fail, emails get lost, payments get stuck.
+
+Fix — graceful queue restart:
+    # This tells workers: finish current job, then restart with new code
+    php artisan queue:restart
+
+Queue workers will complete the current job then reload. No jobs are dropped.
+
+In maintenance mode — pause queue processing:
+    php artisan down           # maintenance mode on
+    # ... deploy ...
+    php artisan queue:restart  # restart workers with new code
+    php artisan up             # maintenance mode off
+
+Horizon (if using Redis queues):
+    php artisan horizon:terminate
+    # Supervisor auto-restarts Horizon with new code
+
+Prevent jobs from running during deployment with a deploy lock:
+    # In deploy script
+    php artisan down
+    # deploy happens here
+    php artisan queue:restart
+    php artisan up
+
+Failed jobs after bad deployment:
+    php artisan queue:failed          # list all failed jobs
+    php artisan queue:retry all       # retry all failed jobs
+    php artisan queue:retry 5         # retry specific job ID
+    php artisan queue:flush           # delete all failed jobs
+
+
+## 17. Laravel Cache / Session Issues After Deployment
+The Problem:
+After deployment users get logged out, see old pages, or get 500 errors from stale cache.
+
+All the caches Laravel has:
+    # Application caches
+    php artisan config:clear    # config cache
+    php artisan route:clear     # route cache
+    php artisan view:clear      # compiled blade templates
+    php artisan event:clear     # event/listener cache
+
+    # Data cache (Redis/Memcached/file)
+    php artisan cache:clear     # your app's cached data
+
+    # Everything at once
+    php artisan optimize:clear
+
+Session issues after deployment:
+If you changed session config or encryption key (`APP_KEY`), all sessions are invalidated — everyone gets logged out.
+    # Never change APP_KEY on production
+    # It encrypts sessions, cookies, and encrypted model fields
+
+    # If you must change it:
+    php artisan key:generate    # generates new key
+    # Accept that all users will be logged out
+    # Encrypted data from before is now unreadable
+
+OPcache issue (very common, hard to spot):
+PHP's OPcache keeps compiled PHP files in memory. After `git pull`, OPcache still serves the old compiled versions even though the files changed on disk.
+    # Reset OPcache after every deployment
+    php artisan opcache:clear    # if using opcache package
+
+    # Or via PHP directly
+    php -r "opcache_reset();"
+
+    # Or restart PHP-FPM
+    sudo systemctl reload php8.2-fpm
+
+Full recommended deploy sequence covering all of the above:
+    #!/bin/bash
+    set -e  # stop script on any error
+
+    echo "🚀 Starting deployment..."
+
+    cd /var/www/myapp
+
+    # 1. Enable maintenance mode
+    php artisan down
+
+    # 2. Pull latest code
+    git fetch origin
+    git reset --hard origin/main
+
+    # 3. Install dependencies
+    composer install --no-dev --optimize-autoloader --no-interaction
+
+    # 4. Clear all caches
+    php artisan optimize:clear
+
+    # 5. Run migrations
+    php artisan migrate --force
+
+    # 6. Rebuild caches
+    php artisan optimize
+
+    # 7. Fix permissions
+    chmod -R 775 storage bootstrap/cache
+    chown -R www-data:www-data storage bootstrap/cache
+
+    # 8. Restart queue workers
+    php artisan queue:restart
+
+    # 9. Reload PHP OPcache
+    sudo systemctl reload php8.2-fpm
+
+    # 10. Bring app back online
+    php artisan up
+
+    echo "✅ Deployment complete!"
+
+
+================================================================================
+                               The Big Picture
+================================================================================
+
+Every problem above comes down to 3 root causes:
+
+1. Server state drift     → Someone changed something manually on server.
+                          → Fix: Server is always disposable, Git is the source of truth.
+
+2. Missing automation     → Steps done manually get forgotten.
+                          → Fix: Put everything in the deploy script, do nothing manually.
+
+3. Wrong hosting type     → Shared hosting fighting against your workflow.
+                          → Fix: Move to a VPS with SSH access.

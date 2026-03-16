@@ -1,0 +1,285 @@
+================================================================
+SOPHOS XG115 — FACTORY RESET & LAN SETUP GUIDE
+Based on: Real session (Mar 16, 2026) via Gemini
+================================================================
+
+HARDWARE OVERVIEW
+-----------------
+Device    : Sophos XG 115 Rev 3 (XG115_XN03)
+BIOS      : Ver 5.0.1.2 (05/08/2019)
+CPU       : Intel Atom E3940 @ 1.60GHz
+RAM       : 4096MB DDR3 1600
+Storage   : 64GB ADATA SSD
+Firmware  : SFOS 19.0.2 MR-2-Build472 (reinstalled fresh)
+
+================================================================
+SECTION 1 — SERIAL CONSOLE ACCESS (MAC)
+================================================================
+
+REQUIRED:
+  - USB-to-Serial adapter
+  - RJ45-to-DB9 console cable (rollover/console cable — NOT a regular Ethernet cable)
+  - Mac Terminal (no extra software needed)
+
+STEP 1 — Find the serial port device:
+  ls /dev/tty.*
+  → Look for: /dev/tty.usbserial-XXXXXXXX
+
+STEP 2 — Kill any existing screen session holding the port:
+  sudo fuser /dev/tty.usbserial-XXXXXXXX
+  # If a PID shows up (e.g., 1911):
+  ps aux | grep <PID>          # Confirm it's a stale screen session
+  sudo kill -9 <PID>
+  sudo rm -f /var/spool/uucp/LCK*
+
+STEP 3 — Connect via serial console (baud rate: 38400):
+  sudo cu -l /dev/tty.usbserial-XXXXXXXX -s 38400
+  # Disconnect with: ~.
+
+NOTES:
+  - Sophos XG serial settings: 38400 baud, 8N1
+  - The console port looks like an RJ45 port — don't confuse with LAN ports
+  - A regular Ethernet patch cable will NOT work; you need a rollover/console cable
+
+================================================================
+SECTION 2 — FACTORY RESET PROCEDURE
+================================================================
+
+METHOD — Boot Menu (F7 at POST):
+
+  1. Reboot device and watch serial console
+  2. During boot you will see:
+       "Press <DEL> or <ESC> to enter setup."
+       "Press <F7> to enter boot menu."
+  3. Press F7 immediately (window is ~2-3 seconds)
+  4. Boot Menu appears:
+       1. SFLoader
+       2. Troubleshoot    ← SELECT THIS
+       3. 20_0_3_427
+       4. 20_0_0_222
+  5. Inside Troubleshoot → Select "Advanced"
+  6. You will be dropped into a root shell (#)
+
+FULL DISK WIPE (used in this session):
+  # In the root shell:
+  dd if=/dev/zero of=/dev/sda bs=1M
+  # Wait ~10-15 mins for 60GB disk
+  # Exits with: "No space left on device" — this is NORMAL and expected
+  # Output: 61057+0 records out (≈61GB zeroed)
+
+  WARNING: This wipes ALL firmware. You MUST reinstall from USB after this.
+
+================================================================
+SECTION 3 — FIRMWARE REINSTALL VIA USB (MAC)
+================================================================
+
+FIRMWARE FILE USED: HW-19.0.2_MR-2-472.iso
+
+STEP 1 — Find and unmount the USB drive on Mac:
+  diskutil list
+  # USB drive was: /dev/diskN (e.g. disk2, disk3 etc. — check diskutil list output)
+  diskutil unmountDisk force /dev/diskN
+
+STEP 2 — Flash the ISO to USB:
+  sudo dd if=~/Downloads/HW-19.0.2_MR-2-472.iso of=/dev/rdiskN bs=1m status=progress
+  # Transfer rate: ~6MB/s | Total: 1354MB | Time: ~3.5 mins
+  # Note: Use /dev/rdisk4 (raw device) — faster than /dev/disk4
+
+STEP 3 — Eject:
+  diskutil eject /dev/diskN
+
+STEP 4 — Boot XG115 from USB:
+  - Insert USB into XG115
+  - Power on — boots from USB automatically (since disk is wiped)
+  - Watch console — installer runs automatically:
+      ✅ Formatting all partitions
+      ✅ Installing Loader for XG115_XN03
+      ✅ Installing Firmware for XG115_XN03
+      ✅ Firmware Installed
+  - Press 'y' to reboot when prompted
+  - Remove USB before reboot completes
+
+================================================================
+SECTION 4 — INITIAL SOPHOS SETUP (WEB UI)
+================================================================
+
+DEFAULT WEB ADMIN ACCESS:
+  URL      : https://172.16.16.16:4444
+  Username : admin
+  Password : admin  (change immediately in setup wizard)
+
+DEFAULT INTERFACE IPs (post-reinstall):
+  Port1 (LAN) : 172.16.16.16 / 255.255.255.0
+  Port2 (WAN) : DHCP from ISP
+
+SETUP WIZARD STEPS:
+  1. Set new admin password
+  2. Network Configuration → "This firewall (route mode)"
+  3. Enable Network Protection (intrusion + web threats)
+  4. Configure email backup (optional but recommended)
+  5. Login → Control Center dashboard
+
+================================================================
+SECTION 5 — FINAL NETWORK TOPOLOGY
+================================================================
+
+PHYSICAL CONNECTIONS:
+  Port1 (LAN) ← Laptop (Mac)
+  Port2 (WAN) ← ISP Modem
+  Port3 (LAN) ← NAS
+
+IP ADDRESSING:
+  ┌─────────────────────────────────────────────────────┐
+  │ Device         │ IP              │ Zone  │ Method   │
+  ├─────────────────────────────────────────────────────┤
+  │ Sophos Port1   │ 172.16.16.16    │ LAN   │ Static   │
+  │ Sophos Port3   │ 10.10.10.1      │ LAN   │ Static   │
+  │ Laptop (Mac)   │ 172.16.16.100   │ LAN   │ Manual   │
+  │ NAS            │ 10.10.10.10     │ LAN   │ Reserved │
+  │ ISP WAN        │ <assigned by ISP DHCP>          │ WAN   │ DHCP     │
+  └─────────────────────────────────────────────────────┘
+
+WHY TWO SUBNETS FOR LAN?
+  Initially Port3 was 192.168.10.x — this CONFLICTED with ISP modem
+  subnet (also 192.168.10.x on Port2/WAN). Sophos ARP table showed
+  NAS appearing on Port2, causing routing failure.
+  FIX: Moved Port3 to 10.10.10.x to eliminate subnet overlap.
+
+================================================================
+SECTION 6 — DHCP CONFIGURATION
+================================================================
+
+LAN_DHCP (Port1 — Laptop network):
+  Interface  : Port1
+  Range      : 172.16.16.17 – 172.16.16.254
+  Gateway    : 172.16.16.16
+  DNS        : 8.8.8.8 / 8.8.4.4
+
+LAN_DHCP_Port3 (Port3 — NAS network):
+  Interface  : Port3
+  Range      : 10.10.10.50 – 10.10.10.254   ← starts at .50 to avoid reserved IPs
+  Gateway    : 10.10.10.1
+  DNS        : 8.8.8.8 / 8.8.4.4
+  Static Reservation:
+    NAS — MAC: <your-NAS-MAC-address> → Always gets 10.10.10.10
+
+NOTE: Dynamic range must NOT include statically reserved IPs.
+      Keep .10–.49 as a "Safe Zone" for static assignments.
+
+================================================================
+SECTION 7 — FIREWALL RULES
+================================================================
+
+RULE: Internal_Access_to_NAS (ID: 6)
+  Source Zone     : LAN
+  Source Networks : Any
+  Destination Zone: LAN
+  Dest Networks   : Any
+  Services        : Any
+  Action          : Accept
+  NAT             : Rewrite source address (Masquerading) = ON
+
+  WHY MASQUERADE FOR LAN-TO-LAN?
+  The NAS may reject requests from the 172.16.16.x subnet
+  (different from its own 10.10.10.x). With MASQ ON, the Sophos
+  rewrites the source IP to 10.10.10.1 so the NAS sees a
+  "local" request and responds correctly.
+
+RULE: Internal_to_Internet (LAN → WAN)
+  Source Zone     : LAN
+  Source Networks : Any
+  Destination Zone: WAN
+  Dest Networks   : Any
+  Services        : Any
+  Action          : Accept
+  NAT             : Linked NAT rule with MASQ (auto-created)
+
+================================================================
+SECTION 8 — MAC NETWORK CONFIG (FOR MANAGEMENT)
+================================================================
+
+Set USB LAN adapter (en5) to manual IP:
+  sudo networksetup -setmanual "USB 10/100/1000 LAN" 172.16.16.100 255.255.255.0 172.16.16.16
+
+Set Wi-Fi as priority over USB LAN (so internet stays on Wi-Fi):
+  sudo networksetup -ordernetworkservices "Wi-Fi" "USB 10/100/1000 LAN" "Thunderbolt Bridge" "Thunderbolt 1" "Thunderbolt 2"
+
+Find USB LAN interface name:
+  networksetup -listallhardwareports
+  # USB 10/100/1000 LAN → Device: en5
+
+================================================================
+SECTION 9 — NAS ACCESS
+================================================================
+
+NAS Hostname   : <your-nas-hostname>
+NAS IP         : 10.10.10.10
+NAS MAC        : <your-NAS-MAC-address>
+Web Server     : nginx (confirmed via curl)
+
+ACCESS FROM MAC:
+  Browser : http://10.10.10.10  (or https://10.10.10.10)
+  Finder  : Cmd+K → smb://10.10.10.10
+
+PING TEST (confirmation of working setup):
+  $ ping 10.10.10.10
+  64 bytes from 10.10.10.10: icmp_seq=0 ttl=64 time=0.384 ms  ✅
+
+================================================================
+SECTION 10 — TROUBLESHOOTING REFERENCE
+================================================================
+
+CHECK ARP TABLE (who's physically connected to which port):
+  # In Sophos Advanced Shell (Main Menu → 5 → 3):
+  arp -a
+  # Look for device IPs and which Port they appear on
+  # If NAS appears on Port2 → cable is in wrong physical port or subnet conflict
+
+CHECK DHCP TRAFFIC FROM MAC:
+  sudo tcpdump -i en5 port 67 or port 68 -n
+  # Should see: BOOTP/DHCP Reply from 172.16.16.16 to 172.16.16.17
+
+POLICY TEST (check if Sophos allows specific traffic):
+  Web UI → Diagnostics → Policy tester
+  Source IP: 172.16.16.100 | Destination: 10.10.10.10 | Port: 80
+  → Should show: "Firewall rule: Internal_Access_to_NAS → Accept"
+
+TEST NAS PORT FROM SOPHOS SHELL:
+  telnet 10.10.10.10 80
+  # "Connected" = NAS web server is active on port 80
+
+CHECK NAS HTTP RESPONSE:
+  curl -v http://10.10.10.10
+  # If HTTP/1.1 200 OK → NAS web UI is running and responding
+
+================================================================
+SECTION 11 — KEY LESSONS LEARNED
+================================================================
+
+1. CABLE TYPE MATTERS: Sophos console port requires a rollover/console
+   cable — a regular Ethernet patch cable gives a connection but zero output.
+
+2. BAUD RATE: Sophos XG115 uses 38400 baud (not 9600 or 115200).
+
+3. STALE SCREEN SESSION: If "cu: Line in use" — find and kill the PID:
+     sudo fuser /dev/tty.usbserial-*
+     sudo kill -9 <PID>
+
+4. SUBNET CONFLICT: If ISP modem and a LAN port use the same subnet
+   (e.g., both 192.168.10.x), NAS shows up on wrong port in ARP table.
+   Solution: Move LAN port to a completely different range (e.g., 10.10.10.x).
+
+5. DHCP RANGE RULE: Static reservations must be OUTSIDE the dynamic
+   lease range. Convention: use .10–.49 for static, .50–.254 for dynamic.
+
+6. MASQUERADING FOR INTER-SUBNET LAN: Even LAN-to-LAN traffic across
+   subnets may need MASQ enabled if the target device has no route back
+   to the source subnet.
+
+7. FULL WIPE = FIRMWARE GONE: Running dd if=/dev/zero on the entire
+   disk removes the Sophos Firmware Loader too. F7 boot menu will
+   no longer work. USB boot is the only recovery path.
+
+================================================================
+END OF DOCUMENT
+================================================================

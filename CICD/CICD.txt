@@ -1,0 +1,125 @@
+================================================================================
+               Laravel to InfinityFree CI/CD Setup & Troubleshooting
+================================================================================
+
+The goal was to set up an automated CI/CD pipeline using GitHub Actions that triggers when code is pushed to the `main` branch. This pipeline builds the frontend assets and automatically uploads the compiled application to an InfinityFree shared hosting server via FTP.
+
+
+================================================================================
+                       Pipeline Configurations & Optimizations
+================================================================================
+
+The GitHub Action (`deploy.yml`) performs the following steps:
+
+    1. Checkout Code: Retrieves the latest code from the `main` branch.
+    2. Setup PHP (8.2): Installs required PHP extensions.
+    3. Composer Install: Installs all backend PHP dependencies optimally (without dev dependencies).
+    4. Setup Node.js (v20): Configured with NPM caching (`cache: 'npm'`) to speed up subsequent pipeline builds significantly.
+    5. NPM Build: Runs `npm ci` and `npm run build` to compile CSS and JavaScript via Vite.
+    6. Deploy via FTP: Uses `SamKirkland/FTP-Deploy-Action` to upload the code to InfinityFree's `/htdocs/` folder.
+        - Crucial Exclusions: thousands of unnecessary files are intentionally excluded from the FTP upload to prevent timeout errors and save storage, such as:
+          **/.git*, **/node_modules/**, **/tests/**, .github/**, artisan, composer.json, composer.lock, package.json, package-lock.json, vite.config.js, .env.example, README.md, phpunit.xml, etc.
+
+
+================================================================================
+                              Troubleshooting & Build Fixes
+================================================================================
+
+During the process, the automated deployments failed. We diagnosed and fixed the following crucial errors:
+
+## 1. The Vite/PostCSS Build Failure
+    Error: The GitHub pipeline failed exactly at `npm run build` with the message: `Failed to load PostCSS config: Cannot find module 'tailwindcss'`.
+    Why it happened: The repository mistakenly contained a `postcss.config.js` file trying to load Tailwind CSS. However, the exact project is built using Bootstrap and the Sneat Admin Template, so Tailwind wasn't installed.
+    Fix: Removed the `postcss.config.js` file entirely. `npm run build` successfully executed afterward.
+
+## 2. Massive Repository Size / Freezing Deployments
+    Error: The deployment hung and git commands took forever, taking up massive storage space on GitHub.
+    Why it happened: The local `node_modules/` and `vendor/` directories (totaling over 200,000 files!) were accidentally pushed and tracked inside the GitHub repository.
+    Fix: Issued the command `git rm -r --cached node_modules vendor` to forcefully remove those directories from GitHub's tracking system without deleting them locally, allowing them to remain safely ignored via `.gitignore`. 
+
+## 3. Local Development `php artisan serve` Issue
+    Error: Running `php artisan serve` locally yielded `The provided cwd "/Users/<your-username>/<your-project>/public" does not exist.`
+    Why it happened: To accommodate shared hosting like InfinityFree, the `public/` folder was removed, and `index.php` along with `.htaccess` were moved directly into the root folder. Laravel's built-in local server hardcodes looking for the `public` folder and crashes without it.
+    Workaround: Instead of using `php artisan serve`, the project should be served locally using tools that mirror a true web server pointing to the root directory, such as Laravel Herd, MAMP, or XAMPP.
+
+## 4. Setting up GitHub Secrets (Critical for Public Repositories)
+    Warning: Never hardcode FTP passwords in `deploy.yml`. It will easily get hacked if the repository is public.
+    Fix: Use `$\{\{ secrets.FTP_PASSWORD \}\}` in `deploy.yml`. 
+    Setup: Go to GitHub Repository -> Settings -> Secrets and variables -> Actions. Click "New repository secret" and manually add:
+    - FTP_SERVER = ftpupload.net
+    - FTP_USERNAME = ftp-user
+    - FTP_PASSWORD = your-password
+
+## 5. The "500 Server Error" (Missing .env file)
+    Error: After deployment, visiting the site yields a generic 500 Server Error.
+    Why it happened: `.env` was legally removed from the GitHub repository for security. Since the FTP tool didn't see `.env` in the GitHub code, it forcefully deleted it from InfinityFree, breaking the database connection. Also, the `vendor` directory wasn't being uploaded because it was matched by `.gitignore` rules.
+    Permanent Fix: 
+    1. The `.env` and `storage/` directory paths were hard-added to the FTP Action's `exclude:` block so the bot never attempts to delete them on the live server.
+    2. We added a temporary `rm -f .gitignore` step right before FTP upload. This allows the newly built `vendor/` folder to be successfully sent over FTP instead of getting ignored.
+    3. The absolute only way to restore the broken website is to manually upload your `.env` file to InfinityFree via FileZilla or File Manager one time. After the initial manual upload, future automated deployments will ignore it perfectly without deleting it.
+
+
+================================================================================
+                      Essential Security Measures (.htaccess)
+================================================================================
+
+Because the `public/` folder is bypassed, all framework files and sensitive configurations (like the `.env` file containing database passwords) sit at the root web level. 
+To prevent attackers from downloading these files via the browser, the following strict security rules were added to the main `.htaccess` file:
+
+    # Block dot files (like .env, .git)
+    RewriteRule ^\.(.*)$ - [F,L]
+
+    # Block specific Laravel files
+    RewriteRule ^(artisan|composer\.json|composer\.lock|package\.json|package-lock\.json|phpunit\.xml|README\.md)$ - [F,L]
+
+    # Block access to core application directories
+    RewriteRule ^(app|bootstrap(?!/assets)|config|database|resources|routes|storage|tests|vendor)(/.*)?$ - [F,L]
+
+These rules immediately return a 403 Forbidden error to unauthorized browsers attempting to poke around internal folders.
+
+
+================================================================================
+           Phase 2: Modernization & Enterprise-Grade Pipeline
+================================================================================
+
+The pipeline was evolved from a simple "FTP upload" script into a professional, enterprise-grade CI/CD workflow to ensure code quality, security, and stability.
+
+## 6. Multi-Stage Validation (Lint & Test)
+    Objective: Never deploy broken or messy code. The pipeline now blocks deployments if:
+    - Code style doesn't match Laravel standards (Laravel Pint).
+    - Security vulnerabilities are found in dependencies (Composer Audit).
+    - Features break after a code change (PHPUnit / Pest).
+
+## 7. Automated Code Style (Laravel Pint)
+    Context: Laravel projects follow PSR-12 and Pint standards.
+    Issue: "Check Code Style" failed in CI with 39+ formatting errors in config/routes.
+    Fix: Integrated `pint.json` and ran `vendor/bin/pint` locally to auto-fix formatting across all system files. We specifically excluded `database/migrations` to respect DB history.
+
+## 8. Solving the PHPUnit 11 Version Mismatch
+    Error: Pipeline crashed during tests with `TypeError: Too few arguments`.
+    Why: A mismatch in `composer.lock` where some testing internal packages were out of sync with PHPUnit 11's core.
+    Fix: Performed a deep dev-dependency update. This synchronized the testing framework and resolved the "exit code 255" crash.
+
+## 9. CI Environment Fix (MissingAppKeyException)
+    Error: Tests failed in GitHub Actions with `No application encryption key has been specified`.
+    Why: Laravel requires an `APP_KEY` to initialize, even for tests.
+    Fix: Added a dummy testing key specifically to the GitHub Action environment:
+    ```yaml
+    env:
+      APP_KEY: base64:<generate-with-php-artisan-key-generate>
+    ```
+
+## 10. URL Refactoring (Cleaner Routing)
+    Requirement: Change `http://your-domain.com/prefix/dashboard` to `http://your-domain.com/dashboard`.
+    Fix: 
+    - Removed the `prefix('varsha')` from the main route group in `routes/web.php`.
+    - Updated all internal links in controllers (AuthController, DashboardController, etc.).
+    - Updated all Blade templates to use the new route names.
+    - Verified all 7 feature tests passed after URL changes.
+
+## 11. Enterprise Stack Preparation (Jenkins & Docker)
+    Transitioning from simple GitHub Actions to a self-managed DevOps stack:
+    - Jenkins: Orchestrating complex builds and SonarQube analysis.
+    - SonarQube: Integrated for deep static analysis of code quality and "technical debt".
+    - Docker: Created a multi-stage production `Dockerfile` using Nginx + PHP-FPM + Supervisor for high-performance hosting.
+    - docker-compose-devops.yml: Sets up the entire localized CI/CD environment (Jenkins + Postgres + SonarQube).

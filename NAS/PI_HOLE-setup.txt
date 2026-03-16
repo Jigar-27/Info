@@ -31,9 +31,9 @@ services:
       - "8053:80/tcp"
     environment:
         TZ: Asia/Kolkata
-        WEBPASSWORD: "admin123"
+        WEBPASSWORD: "<your-pihole-password>"
         DNSMASQ_LISTENING: all
-        FTLCONF_LOCAL_IPV4: 192.168.10.83
+        FTLCONF_LOCAL_IPV4: <NAS-IP>
         PIHOLE_DNS_: 1.1.1.1;8.8.8.8
     volumes:
       - /volume1/docker/pihole/etc-pihole:/etc/pihole
@@ -66,9 +66,9 @@ mkdir -p /volume1/docker/pihole/etc-dnsmasq.d
 ## Step 2.2: Access Pi-hole Admin Panel
 Open browser:
 ```
-http://192.168.10.83:8053/admin
+http://<NAS-IP>:8053/admin
 ```
-Login password: `admin123` (change this!)
+Login password: `<your-pihole-password>` (change this!)
 
 <br><br>
 
@@ -83,7 +83,7 @@ This is the most important step — tell your router to use Pi-hole as DNS:
 2. Find **DHCP Settings** or **DNS Settings**
 3. Set **Primary DNS** to:
    ```
-   192.168.10.83
+   <NAS-IP>
    ```
 4. Save and restart router
 
@@ -95,7 +95,7 @@ Now ALL devices on your network will go through Pi-hole! ✅
 ```
 Device requests ads.google.com
         ↓
-Router sends DNS query to Pi-hole (192.168.10.83)
+Router sends DNS query to Pi-hole (<NAS-IP>)
         ↓
 Pi-hole checks blocklist
         ↓
