@@ -1,0 +1,57 @@
+services:
+  gitea:
+    image: gitea/gitea:latest
+    ports:
+      - "3000:3000"   # web UI
+      - "2222:22"     # SSH for git push
+    volumes: [gitea_data:/data]
+    environment:
+      - GITEA__database__DB_TYPE=sqlite3
+      - GITEA__server__ROOT_URL=http://10.80.30.83:3000/
+      - GITEA__server__DOMAIN=10.80.30.83
+      - GITEA__webhook__ALLOWED_HOST_LIST=*
+    networks: [app_network, cicd]
+
+  drone:
+    image: drone/drone:2
+    ports: ["8081:80"]
+    environment:
+      - DRONE_GITEA_SERVER=http://10.80.30.83:3000
+      - DRONE_GITEA_CLIENT_ID=bacd741a-5f20-4ab2-8acf-a269a934c6ca      # set after Gitea setup
+      - DRONE_GITEA_CLIENT_SECRET=c6deefce8777eafdbbd1af83ba1d3a2263245b72
+      - DRONE_RPC_SECRET=supersecretrpckey
+      - DRONE_SERVER_HOST=10.80.30.83:8081
+      - DRONE_SERVER_PROTO=http
+      - DRONE_USER_ADMIN=admin
+    volumes: [drone_data:/data]
+    depends_on: [gitea]
+    networks: [cicd]
+
+  drone-runner:
+    image: drone/drone-runner-docker:1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DRONE_RPC_PROTO=http
+      - DRONE_RPC_HOST=drone
+      - DRONE_RPC_SECRET=supersecretrpckey
+      - DRONE_RUNNER_CAPACITY=2
+    depends_on: [drone]
+    networks: [cicd]
+
+  registry:
+    image: registry:2
+    ports: ["5050:5000"]
+    volumes: [registry_data:/var/lib/registry]
+    networks: [cicd, app_network]
+
+networks:
+  app_network:
+    external: true
+  cicd:
+    name: cicd_network
+
+volumes:
+  gitea_data:
+  drone_data:
+  registry_data:

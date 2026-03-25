@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevOps Docs Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0f19;
+      --bg-2: #0f1828;
+      --panel: rgba(16, 24, 39, 0.9);
+      --panel-2: rgba(17, 29, 49, 0.8);
+      --line: #244067;
+      --text: #e7eefb;
+      --muted: #9ab0d2;
+      --accent: #30d5ff;
+      --accent-2: #4faef8;
+      --shadow: 0 16px 30px rgba(0,0,0,.32);
+    }
+
+    body.theme-light {
+      --bg: #eff5ff;
+      --bg-2: #f7faff;
+      --panel: rgba(255, 255, 255, 0.95);
+      --panel-2: rgba(245, 249, 255, 0.92);
+      --line: #c8d8ef;
+      --text: #1d2b46;
+      --muted: #58708f;
+      --accent: #0ea5e9;
+      --accent-2: #2563eb;
+      --shadow: 0 14px 24px rgba(27, 56, 97, .14);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+
+    body {
+      font-family: "Space Grotesk", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 440px at 10% -5%, rgba(48,213,255,.14), transparent 65%),
+        radial-gradient(900px 420px at 100% -5%, rgba(79,174,248,.12), transparent 70%),
+        linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 80%);
+      overflow: hidden;
+      transition: background .25s ease, color .25s ease;
+    }
+
+    .notice {
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, rgba(48,213,255,.12), rgba(34,197,94,.08));
+      font-size: 13px;
+    }
+
+    .notice a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+      margin-left: 6px;
+    }
+
+    .topbar {
+      height: 70px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(10, 17, 30, .65);
+      backdrop-filter: blur(8px);
+    }
+
+    .theme-light .topbar {
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 22px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: conic-gradient(from 120deg, var(--accent), var(--accent-2), var(--accent));
+      box-shadow: 0 0 0 2px rgba(48,213,255,.22);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chip, .toggle-btn {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .toggle-btn {
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .search-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .search {
+      width: min(700px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      outline: none;
+    }
+
+    .shell {
+      height: calc(100vh - 110px);
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      min-height: 0;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      padding: 8px;
+      overflow: auto;
+      background: rgba(13, 24, 43, .55);
+    }
+
+    .theme-light .sidebar {
+      background: rgba(236, 245, 255, .65);
+    }
+
+    .module-card {
+      margin-bottom: 8px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel-2);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .module-card summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #cfe0f9;
+      user-select: none;
+    }
+
+    .theme-light .module-card summary {
+      color: #24375a;
+    }
+
+    .module-card summary::-webkit-details-marker { display: none; }
+
+    .mod-count {
+      color: var(--muted);
+      font-size: 23px;
+      line-height: 1;
+      font-weight: 500;
+      min-width: 28px;
+      text-align: right;
+    }
+
+    .file-list {
+      border-top: 1px solid var(--line);
+      padding: 4px;
+      background: rgba(10, 18, 32, .45);
+    }
+
+    .theme-light .file-list {
+      background: rgba(246, 250, 255, .86);
+    }
+
+    .file-btn {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 11px;
+      font-family: "JetBrains Mono", monospace;
+      cursor: pointer;
+      transition: 160ms ease;
+      margin: 1px 0;
+    }
+
+    .file-btn:hover,
+    .file-btn.active {
+      background: linear-gradient(90deg, rgba(48,213,255,.18), rgba(79,174,248,.18));
+      color: #f2fdff;
+    }
+
+    .theme-light .file-btn:hover,
+    .theme-light .file-btn.active {
+      color: #0f213f;
+    }
+
+    .main {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .doc-header {
+      margin: 12px 12px 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      box-shadow: var(--shadow);
+    }
+
+    .crumb {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .doc-title {
+      margin: 4px 0 0;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn.primary {
+      border-color: rgba(48,213,255,.55);
+      background: linear-gradient(90deg, rgba(48,213,255,.24), rgba(79,174,248,.24));
+    }
+
+    .viewer {
+      margin: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      overflow: auto;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .doc-content h1, .doc-content h2, .doc-content h3, .doc-content h4 {
+      color: var(--text);
+      scroll-margin-top: 12px;
+    }
+
+    .doc-content h1 { font-size: 30px; }
+    .doc-content h2 { font-size: 24px; margin-top: 26px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+    .doc-content h3 { font-size: 19px; margin-top: 22px; }
+    .doc-content p, .doc-content li { color: var(--muted); line-height: 1.7; }
+    .doc-content ul, .doc-content ol { padding-left: 22px; }
+    .doc-content a { color: var(--accent); text-decoration: none; }
+
+    .doc-content code {
+      font-family: "JetBrains Mono", monospace;
+      background: rgba(79,174,248,.13);
+      border: 1px solid rgba(79,174,248,.25);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .codeblock {
+      margin: 12px 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(8, 14, 25, .7);
+    }
+
+    .theme-light .codeblock {
+      background: rgba(247, 250, 255, .95);
+    }
+
+    .codeblock .lang {
+      display: block;
+      border-bottom: 1px solid var(--line);
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .codeblock pre {
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text);
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .file-code {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: auto;
+      background: rgba(8, 14, 25, .7);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+    }
+
+    .theme-light .file-code {
+      background: rgba(247, 250, 255, .95);
+    }
+
+    .line { display: grid; grid-template-columns: 58px 1fr; }
+    .ln {
+      text-align: right;
+      padding: 0 10px;
+      user-select: none;
+      color: var(--muted);
+      border-right: 1px solid var(--line);
+      background: rgba(17,29,49,.25);
+    }
+    .lc {
+      white-space: pre;
+      padding: 0 10px;
+      color: var(--text);
+    }
+
+    .hint {
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 12px;
+    }
+
+    .graph-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 0 0 16px;
+    }
+
+    .graph-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel-2);
+      padding: 12px;
+    }
+
+    .graph-card h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .flow-node {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--text);
+      background: rgba(16,24,39,.55);
+    }
+
+    .flow-node.active {
+      border-color: rgba(48,213,255,.6);
+      background: linear-gradient(90deg, rgba(48,213,255,.2), rgba(79,174,248,.22));
+      color: #f3fcff;
+      font-weight: 700;
+    }
+
+    .flow-arrow {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .bars {
+      display: grid;
+      gap: 7px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 30px;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .bar-track {
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(150, 177, 210, .18);
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .bar-row.active span {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .bar-row.active .bar-fill {
+      background: linear-gradient(90deg, #34e6ff, #5bc0ff);
+      box-shadow: 0 0 0 1px rgba(48,213,255,.25) inset;
+    }
+
+    .path-flow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .path-node {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(17,29,49,.5);
+    }
+
+    .path-node.current {
+      color: var(--text);
+      border-color: rgba(48,213,255,.6);
+      background: linear-gradient(90deg, rgba(48,213,255,.2), rgba(79,174,248,.22));
+      font-weight: 700;
+    }
+
+    .type-rows {
+      display: grid;
+      gap: 7px;
+    }
+
+    .type-row {
+      display: grid;
+      grid-template-columns: 58px 1fr 30px;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .type-tag {
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    @media (max-width: 1050px) {
+      .shell { grid-template-columns: 270px 1fr; }
+      .bar-row { grid-template-columns: 96px 1fr 28px; }
+    }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .topbar {
+        grid-template-columns: 1fr;
+        height: auto;
+        gap: 8px;
+        padding: 10px;
+      }
+      .top-actions { justify-content: flex-start; }
+      .shell {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .sidebar { max-height: 48vh; }
+      .main { min-height: 60vh; }
+      .graph-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="notice">
+    Re-watch your full Docker DevOps setup from one portal.
+    <a href="DevOps-Guide/HANDBOOK.md" target="_blank" rel="noopener">Open handbook</a>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo"></span>
+      <span>DevOps Docs Portal</span>
+    </div>
+
+    <div class="search-wrap">
+      <input id="searchInput" class="search" type="text" placeholder="Search files... (press /)" />
+    </div>
+
+    <div class="top-actions">
+      <span class="chip">Docker-Only</span>
+      <span class="chip">Secure View</span>
+      <button id="themeToggle" class="toggle-btn" type="button">Light Theme</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div id="navRoot"></div>
+    </aside>
+
+    <section class="main">
+      <section class="doc-header">
+        <div>
+          <div class="crumb" id="crumb">Ready</div>
+          <h2 class="doc-title" id="docTitle">Select a file from the left navigation</h2>
+        </div>
+        <div class="actions">
+          <button id="copyBtn" class="btn" type="button">Copy Content</button>
+          <button id="downloadBtn" class="btn" type="button">Download File</button>
+          <button id="reloadBtn" class="btn primary" type="button">Reload</button>
+        </div>
+      </section>
+
+      <section class="viewer" id="viewerPane">
+        <article id="docContent" class="doc-content"></article>
+        <div id="fallback" class="hint" style="display:none;">
+          Preview is not available in the current mode.
+          Use <strong>Download File</strong> or run:
+          <code>python3 -m http.server 8099</code> then open <code>http://localhost:8099</code>.
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <script src="file-data.js"></script>
+  <script>
+    const GROUPS = [
+      {
+        id: "guide",
+        title: "The Basics",
+        category: "foundation",
+        items: [
+          { title: "Start Here", file: "DevOps-Guide/00-START-HERE.md" },
+          { title: "File Analysis", file: "DevOps-Guide/01-File-And-Folder-Analysis.md" },
+          { title: "Workflow", file: "DevOps-Guide/02-First-Run-And-Daily-Workflow.md" },
+          { title: "Troubleshooting", file: "DevOps-Guide/03-Troubleshooting-Playbook.md" },
+          { title: "Cheat Sheet", file: "DevOps-Guide/04-Commands-Cheat-Sheet.md" },
+          { title: "DevOps Book", file: "DevOps-Guide/05-DevOps-Book.md" },
+          { title: "Merged Handbook", file: "DevOps-Guide/HANDBOOK.md" }
+        ]
+      },
+      {
+        id: "compose",
+        title: "Environment Setup",
+        category: "operations",
+        items: [
+          { title: "Core Compose", file: "docker-compose.yml" },
+          { title: "CI/CD Compose", file: "docker-compose.cicd.yml" },
+          { title: "K8s Compose", file: "docker-compose.k8s.yml" },
+          { title: "Monitoring Compose", file: "docker-compose.monitoring.yml" },
+          { title: "IaC Compose", file: "docker-compose.iac.yml" }
+        ]
+      },
+      {
+        id: "cicd",
+        title: "CI/CD",
+        category: "automation",
+        items: [
+          { title: "Drone Pipeline", file: ".drone.yml" },
+          { title: "PHP Dockerfile", file: "Dockerfile.php" },
+          { title: "Nginx Config", file: "nginx.conf" }
+        ]
+      },
+      {
+        id: "k8s",
+        title: "Kubernetes",
+        category: "operations",
+        items: [
+          { title: "Namespace", file: "k8s/namespace.yml" },
+          { title: "ConfigMap", file: "k8s/configmap.yml" },
+          { title: "Secret", file: "k8s/secret.yml" },
+          { title: "Deployment", file: "k8s/deployment.yml" },
+          { title: "Service", file: "k8s/service.yml" },
+          { title: "Registries", file: "k8s/registries.yaml" }
+        ]
+      },
+      {
+        id: "iac",
+        title: "Infrastructure as Code",
+        category: "automation",
+        items: [
+          { title: "Terraform Main", file: "terraform/main.tf" },
+          { title: "Terraform Network", file: "terraform/network.tf" },
+          { title: "Terraform Volumes", file: "terraform/volumes.tf" },
+          { title: "Terraform MySQL", file: "terraform/mysql.tf" },
+          { title: "Terraform Redis", file: "terraform/redis.tf" },
+          { title: "Terraform Outputs", file: "terraform/outputs.tf" },
+          { title: "Terraform Lock", file: "terraform/.terraform.lock.hcl" },
+          { title: "Ansible Config", file: "ansible/ansible.cfg" },
+          { title: "Ansible Inventory", file: "ansible/inventory.yml" },
+          { title: "Ansible Playbook", file: "ansible/site.yml" }
+        ]
+      },
+      {
+        id: "observe",
+        title: "Monitoring",
+        category: "observe",
+        items: [
+          { title: "Prometheus", file: "prometheus.yml" },
+          { title: "Promtail", file: "promtail.yml" }
+        ]
+      }
+    ];
+
+    const navRoot = document.getElementById("navRoot");
+    const searchInput = document.getElementById("searchInput");
+    const docTitle = document.getElementById("docTitle");
+    const crumb = document.getElementById("crumb");
+    const docContent = document.getElementById("docContent");
+    const viewerPane = document.getElementById("viewerPane");
+    const copyBtn = document.getElementById("copyBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const fallback = document.getElementById("fallback");
+    const themeToggle = document.getElementById("themeToggle");
+
+    let activeBtn = null;
+    let selected = null;
+    let currentSafeText = "";
+
+    function esc(s) {
+      return s
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function ext(file) {
+      const i = file.lastIndexOf(".");
+      return i === -1 ? "" : file.slice(i + 1).toLowerCase();
+    }
+
+    function isMarkdown(file) {
+      return ext(file) === "md";
+    }
+
+    function slug(v) {
+      return v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    }
+
+    function parseInline(s) {
+      let out = esc(s);
+      out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
+      out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      out = out.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+      out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      return out;
+    }
+
+    function markdownToHtml(md) {
+      const lines = md.replace(/\r\n/g, "\n").split("\n");
+      const html = [];
+      const headings = [];
+      let inUl = false;
+      let inOl = false;
+      let inCode = false;
+      let codeLang = "text";
+      let codeLines = [];
+
+      function closeLists() {
+        if (inUl) {
+          html.push("</ul>");
+          inUl = false;
+        }
+        if (inOl) {
+          html.push("</ol>");
+          inOl = false;
+        }
+      }
+
+      function flushCode() {
+        html.push(`<div class=\"codeblock\"><span class=\"lang\">${esc(codeLang)}</span><pre>${esc(codeLines.join("\n"))}</pre></div>`);
+        codeLines = [];
+      }
+
+      for (const rawLine of lines) {
+        const line = rawLine || "";
+
+        if (line.startsWith("```")) {
+          if (!inCode) {
+            closeLists();
+            inCode = true;
+            codeLang = line.slice(3).trim() || "text";
+          } else {
+            inCode = false;
+            flushCode();
+          }
+          continue;
+        }
+
+        if (inCode) {
+          codeLines.push(line);
+          continue;
+        }
+
+        const heading = line.match(/^(#{1,6})\s+(.*)$/);
+        if (heading) {
+          closeLists();
+          const lvl = heading[1].length;
+          const text = heading[2].trim();
+          const id = `${slug(text)}-${headings.length}`;
+          headings.push({ id, text, level: lvl });
+          html.push(`<h${lvl} id=\"${id}\">${parseInline(text)}</h${lvl}>`);
+          continue;
+        }
+
+        const ul = line.match(/^[-*+]\s+(.*)$/);
+        if (ul) {
+          if (inOl) {
+            html.push("</ol>");
+            inOl = false;
+          }
+          if (!inUl) {
+            html.push("<ul>");
+            inUl = true;
+          }
+          html.push(`<li>${parseInline(ul[1])}</li>`);
+          continue;
+        }
+
+        const ol = line.match(/^\d+\.\s+(.*)$/);
+        if (ol) {
+          if (inUl) {
+            html.push("</ul>");
+            inUl = false;
+          }
+          if (!inOl) {
+            html.push("<ol>");
+            inOl = true;
+          }
+          html.push(`<li>${parseInline(ol[1])}</li>`);
+          continue;
+        }
+
+        const quote = line.match(/^>\s?(.*)$/);
+        if (quote) {
+          closeLists();
+          html.push(`<blockquote>${parseInline(quote[1])}</blockquote>`);
+          continue;
+        }
+
+        if (!line.trim()) {
+          closeLists();
+          html.push("");
+          continue;
+        }
+
+        closeLists();
+        html.push(`<p>${parseInline(line)}</p>`);
+      }
+
+      closeLists();
+      if (inCode) flushCode();
+      return { html: html.join("\n"), headings };
+    }
+
+    function renderCode(text) {
+      const rows = text.split("\n").map((line, idx) =>
+        `<div class=\"line\"><span class=\"ln\">${idx + 1}</span><span class=\"lc\">${esc(line) || "&nbsp;"}</span></div>`
+      ).join("");
+      return `<div class=\"file-code\">${rows}</div>`;
+    }
+
+    function fileNameFromPath(path) {
+      const raw = path.split("/").pop() || "download.txt";
+      return raw.split("?")[0];
+    }
+
+    function decodeBase64Text(b64) {
+      try {
+        const binary = atob(b64);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        return new TextDecoder().decode(bytes);
+      } catch (e) {
+        try {
+          return decodeURIComponent(escape(atob(b64)));
+        } catch (err) {
+          return atob(b64);
+        }
+      }
+    }
+
+    function getEmbeddedContent(file) {
+      const map = window.FILE_DATA_BASE64 || {};
+      if (!Object.prototype.hasOwnProperty.call(map, file)) return null;
+      return decodeBase64Text(map[file]);
+    }
+
+    function sanitizeContent(file, text) {
+      let out = text || "";
+
+      if (file === "terraform/terraform.tfstate") {
+        return "This file is hidden in the portal for security reasons.";
+      }
+
+      out = out.replace(/^\s*([^#\n]*?(?:DRONE_GITEA_CLIENT_SECRET|MYSQL_ROOT_PASSWORD|DB_PASSWORD|APP_KEY|K3S_TOKEN|DRONE_RPC_SECRET)\s*[:=]\s*).+$/gim, "$1[REDACTED]");
+      out = out.replace(/^(\s*-\s*(?:DRONE_GITEA_CLIENT_SECRET|MYSQL_ROOT_PASSWORD|DB_PASSWORD|APP_KEY|K3S_TOKEN|DRONE_RPC_SECRET)=).+$/gim, "$1[REDACTED]");
+      out = out.replace(/^(\s*(?:(?:client_secret|password|token|secret|app_key)\s*:\s*)).+$/gim, "$1[REDACTED]");
+      out = out.replace(/(\"(?:(?:client_secret|password|token|secret|app_key))\"\s*:\s*\")([^\"]+)(\")/gim, '$1[REDACTED]$3');
+      out = out.replace(/^(\s*[^#\n]*?(?:SECRET|TOKEN|PASSWORD|APP_KEY)[^=\n:]*\s*[:=]\s*).+$/gim, "$1[REDACTED]");
+
+      return out;
+    }
+
+    function getGroupByFile(file) {
+      return GROUPS.find(g => g.items.some(i => i.file === file)) || null;
+    }
+
+    function renderModuleGraphs(item) {
+      const activeGroup = getGroupByFile(item.file);
+      if (!activeGroup) return "";
+
+      const flowNodes = GROUPS.map((g, idx) => {
+        const node = `<span class=\"flow-node${g.id === activeGroup.id ? " active" : ""}\">${esc(g.title)}</span>`;
+        if (idx === GROUPS.length - 1) return node;
+        return `${node}<span class=\"flow-arrow\">→</span>`;
+      }).join("");
+
+      const pathFlow = activeGroup.items.map((entry, idx) => {
+        const cls = entry.file === item.file ? "path-node current" : "path-node";
+        const node = `<span class=\"${cls}\">${esc(entry.title)}</span>`;
+        if (idx === activeGroup.items.length - 1) return node;
+        return `${node}<span class=\"flow-arrow\">→</span>`;
+      }).join("");
+
+      return `
+        <section class=\"graph-grid\">
+          <div class=\"graph-card\">
+            <h3>Module Flow Graph</h3>
+            <div class=\"flow\">${flowNodes}</div>
+          </div>
+          <div class=\"graph-card\">
+            <h3>${esc(activeGroup.title)} Learning Path</h3>
+            <div class=\"path-flow\">${pathFlow}</div>
+          </div>
+        </section>
+      `;
+    }
+
+    async function loadFile(item, btn) {
+      selected = item;
+      if (activeBtn) activeBtn.classList.remove("active");
+      activeBtn = btn;
+      if (activeBtn) activeBtn.classList.add("active");
+      if (activeBtn) {
+        const parentCard = activeBtn.closest(".module-card");
+        if (parentCard) parentCard.open = true;
+      }
+
+      viewerPane.scrollTop = 0;
+      docTitle.textContent = item.title;
+      crumb.textContent = item.file;
+      docContent.innerHTML = '<p style="color:var(--muted)">Loading...</p>';
+      fallback.style.display = "none";
+      currentSafeText = "";
+
+      const embedded = getEmbeddedContent(item.file);
+      if (embedded !== null) {
+        const safe = sanitizeContent(item.file, embedded);
+        currentSafeText = safe;
+
+        if (isMarkdown(item.file)) {
+          const parsed = markdownToHtml(safe);
+          const html = parsed.html || '<p style="color:var(--muted)">Empty markdown file.</p>';
+          docContent.innerHTML = renderModuleGraphs(item) + html;
+        } else {
+          docContent.innerHTML = renderModuleGraphs(item) + renderCode(safe);
+        }
+
+        viewerPane.scrollTop = 0;
+        return;
+      }
+
+      try {
+        const res = await fetch(`${encodeURI(item.file)}?v=${Date.now()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        const safe = sanitizeContent(item.file, text);
+        currentSafeText = safe;
+
+        if (isMarkdown(item.file)) {
+          const parsed = markdownToHtml(safe);
+          const html = parsed.html || '<p style="color:var(--muted)">Empty markdown file.</p>';
+          docContent.innerHTML = renderModuleGraphs(item) + html;
+        } else {
+          docContent.innerHTML = renderModuleGraphs(item) + renderCode(safe);
+        }
+
+        viewerPane.scrollTop = 0;
+      } catch (err) {
+        docContent.innerHTML = "";
+        fallback.style.display = "block";
+        currentSafeText = "";
+        viewerPane.scrollTop = 0;
+      }
+    }
+
+    function renderNav() {
+      const q = searchInput.value.trim().toLowerCase();
+      navRoot.innerHTML = "";
+
+      GROUPS.forEach((g, idx) => {
+        const filteredItems = g.items.filter(i => !q || i.file.toLowerCase().includes(q) || i.title.toLowerCase().includes(q));
+        if (!filteredItems.length) return;
+
+        const details = document.createElement("details");
+        details.className = "module-card";
+        const includesSelected = selected && filteredItems.some(i => i.file === selected.file);
+        details.open = Boolean(includesSelected || (!selected && idx === 0));
+
+        const summary = document.createElement("summary");
+        summary.innerHTML = `<span>${g.title}</span><span class=\"mod-count\">${filteredItems.length}</span>`;
+        details.appendChild(summary);
+
+        const list = document.createElement("div");
+        list.className = "file-list";
+
+        filteredItems.forEach(item => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "file-btn";
+          btn.textContent = item.file;
+          if (selected && selected.file === item.file) {
+            btn.classList.add("active");
+            activeBtn = btn;
+          }
+          btn.addEventListener("click", () => loadFile(item, btn));
+          list.appendChild(btn);
+        });
+
+        details.appendChild(list);
+        navRoot.appendChild(details);
+      });
+
+      const first = navRoot.querySelector(".file-btn");
+      if (first && (!selected || !document.body.contains(activeBtn))) {
+        first.click();
+      }
+    }
+
+    function setTheme(theme) {
+      document.body.classList.toggle("theme-light", theme === "light");
+      themeToggle.textContent = theme === "light" ? "Dark Theme" : "Light Theme";
+      localStorage.setItem("devops_theme", theme);
+    }
+
+    function initTheme() {
+      const stored = localStorage.getItem("devops_theme");
+      if (stored === "light" || stored === "dark") {
+        setTheme(stored);
+      } else {
+        setTheme("dark");
+      }
+    }
+
+    themeToggle.addEventListener("click", () => {
+      const isLight = document.body.classList.contains("theme-light");
+      setTheme(isLight ? "dark" : "light");
+    });
+
+    reloadBtn.addEventListener("click", () => {
+      if (!selected) return;
+      loadFile(selected, activeBtn);
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!selected || !currentSafeText) return;
+      try {
+        await navigator.clipboard.writeText(currentSafeText);
+        copyBtn.textContent = "Copied";
+        setTimeout(() => { copyBtn.textContent = "Copy Content"; }, 1200);
+      } catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = currentSafeText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        copyBtn.textContent = "Copied";
+        setTimeout(() => { copyBtn.textContent = "Copy Content"; }, 1200);
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!selected || !currentSafeText) return;
+      const file = selected.file;
+      const blob = new Blob([currentSafeText], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileNameFromPath(file);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    searchInput.addEventListener("input", () => renderNav());
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "/") {
+        e.preventDefault();
+        searchInput.focus();
+      }
+      if (e.key === "Escape") {
+        searchInput.value = "";
+        renderNav();
+        searchInput.blur();
+      }
+    });
+
+    initTheme();
+    renderNav();
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+kind: pipeline
+type: docker
+name: laravel-pipeline
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+  - name: composer-install
+    image: composer:2
+    commands:
+      - composer install --optimize-autoloader
+
+  - name: lint
+    image: php:8.4-cli
+    commands:
+      - find app -name "*.php" -exec php -l {} \;
+
+  - name: test
+    image: php:8.4-cli
+    environment:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+    commands:
+      - php -r "copy('.env.example', '.env');"
+      - php artisan key:generate
+      - php artisan test --env=testing
+
+  - name: build-and-push
+    image: gcr.io/kaniko-project/executor:debug
+    commands:
+      - /kaniko/executor --context $PWD --dockerfile $PWD/devops/Dockerfile.php --destination 10.80.30.83:5050/laravel-app:latest --destination 10.80.30.83:5050/laravel-app:${DRONE_COMMIT_SHA:0:8} --insecure --skip-tls-verify
+    when:
+      branch: [main]
+
+  - name: notify-success
+    image: alpine
+    commands:
+      - echo "Pipeline passed for commit ${DRONE_COMMIT_SHA:0:8}"
+    when:
+      status: [success]

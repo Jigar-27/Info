@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel
+  namespace: laravel
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: laravel
+  template:
+    metadata:
+      labels:
+        app: laravel
+    spec:
+      initContainers:
+        - name: init-files
+          image: devops-php:latest
+          imagePullPolicy: Never
+          command: ['sh', '-c', 'cp -a /var/www/html/. /shared/']
+          volumeMounts:
+            - name: shared-files
+              mountPath: /shared
+      containers:
+        - name: php
+          image: devops-php:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9000
+          envFrom:
+            - configMapRef:
+                name: laravel-config
+            - secretRef:
+                name: laravel-secret
+          volumeMounts:
+            - name: shared-files
+              mountPath: /var/www/html
+
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+            - name: shared-files
+              mountPath: /var/www/html
+      volumes:
+        - name: shared-files
+          emptyDir: {}
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: laravel
+data:
+  default.conf: |
+    server {
+        listen 80;
+        root /var/www/html/public;
+        index index.php;
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+        location ~ \.php$ {
+            fastcgi_pass localhost:9000;
+            fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+            include fastcgi_params;
+        }
+    }

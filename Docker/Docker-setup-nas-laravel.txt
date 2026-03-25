@@ -88,9 +88,3 @@ sudo docker exec -i laravel_db mysql -u root -proot vms < ./db-init/vms.sql
 ```
 
 ---
-
-## Step 3.2: Access your app
-Open your browser and navigate to:
-```
-http://NAS-IP:8080
-```

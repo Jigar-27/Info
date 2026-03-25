@@ -1,0 +1,5 @@
+all:
+  hosts:
+    laravel_app:
+      ansible_connection: docker
+      ansible_host: devops-php-1

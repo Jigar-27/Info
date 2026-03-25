@@ -1,0 +1,18 @@
+services:
+  terraform:
+    image: hashicorp/terraform:latest
+    working_dir: /workspace
+    volumes:
+      - ./terraform:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["terraform"]
+    network_mode: host
+
+  ansible:
+    image: cytopia/ansible:latest
+    working_dir: /ansible
+    volumes:
+      - ./ansible:/ansible
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["/bin/sh", "-c", "apk add --no-cache docker-cli >/dev/null 2>&1 && ansible-playbook \"$@\"", "--"]
+    network_mode: host

@@ -1,0 +1,52 @@
+---
+- name: Configure Laravel application
+  hosts: laravel_app
+  gather_facts: false
+
+  tasks:
+    - name: Bootstrap Python recursively for Ansible payloads
+      raw: apt-get update && apt-get install -y python3
+      changed_when: false
+    - name: Check PHP version
+      command: php --version
+      register: php_version
+
+    - name: Print PHP version
+      debug:
+        msg: "{{ php_version.stdout }}"
+
+    - name: Check Laravel is installed
+      command: php artisan --version
+      args:
+        chdir: /var/www/html
+      register: laravel_version
+
+    - name: Print Laravel version
+      debug:
+        msg: "{{ laravel_version.stdout }}"
+
+    - name: Run database migrations
+      command: php artisan migrate --force
+      args:
+        chdir: /var/www/html
+
+    - name: Clear application cache
+      command: php artisan cache:clear
+      args:
+        chdir: /var/www/html
+
+    - name: Clear config cache
+      command: php artisan config:clear
+      args:
+        chdir: /var/www/html
+
+    - name: Set storage permissions
+      file:
+        path: /var/www/html/storage
+        mode: "0775"
+        recurse: yes
+
+    - name: Optimize Laravel
+      command: php artisan optimize
+      args:
+        chdir: /var/www/html

@@ -1,0 +1,66 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    ports: ["9090:9090"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks: [app_network, monitoring]
+
+  grafana:
+    image: grafana/grafana:latest
+    ports: ["3001:3000"]
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    volumes: [grafana_data:/var/lib/grafana]
+    depends_on: [prometheus, loki]
+    networks: [monitoring]
+
+  loki:
+    image: grafana/loki:latest
+    ports: ["3100:3100"]
+    networks: [monitoring, app_network]
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./promtail.yml:/etc/promtail/config.yml
+    networks: [monitoring]
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    command: ["-nginx.scrape-uri=http://nginx:80/stub_status"]
+    networks: [monitoring, app_network]
+    depends_on: [nginx]
+
+  mysql-exporter:
+    image: prom/mysqld-exporter:latest
+    volumes:
+      - ./.my.cnf:/.my.cnf:ro
+    networks: [monitoring, app_network]
+    depends_on: [mysql]
+    command: ["--config.my-cnf=/.my.cnf"]
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    environment:
+      - REDIS_ADDR=redis:6379
+    networks: [monitoring, app_network]
+    depends_on: [redis]
+
+  php-fpm-exporter:
+    image: hipages/php-fpm_exporter:latest
+    environment:
+      - PHP_FPM_SCRAPE_URI=tcp://php:9000/status
+    networks: [monitoring, app_network]
+    depends_on: [php]
+
+networks:
+  app_network:
+    external: true
+  monitoring:
+    name: monitoring_network
+
+volumes:
+  grafana_data:
