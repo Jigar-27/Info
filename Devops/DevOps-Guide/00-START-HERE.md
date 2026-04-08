@@ -1,12 +1,9 @@
 # DevOps Lab Guide (Docker-Only)
 
-This guide documents your current setup in:
-`/Users/jigar/Main/Info/Devops`
-
-## What This Folder Gives You
+## What This Folder Provides
 - One place to run and practice **CI/CD, Kubernetes, IaC, and Monitoring**.
 - Step-by-step commands for daily use.
-- Troubleshooting for the exact errors you already hit.
+- Troubleshooting for commonly encountered errors.
 
 ## Suggested Learning Flow
 1. App stack (`docker-compose.yml`)
@@ -21,10 +18,5 @@ This guide documents your current setup in:
 3. `03-Troubleshooting-Playbook.md`
 4. `04-Commands-Cheat-Sheet.md`
 
-## Important Note About Your Build Error
-You had this failure:
-- Composer lock requires `php >= 8.4`
-- Build used `php 8.2.30`
-
-Your current `Dockerfile.php` in this folder already uses `FROM php:8.4-fpm`, which is correct.
-If you still see 8.2 in builds, see troubleshooting section `T-01`.
+## Important Note About Build Errors
+If image builds fail because `composer.lock` requires `php >= 8.4` but the build resolves to 8.2.x, verify that the `Dockerfile.php` explicitly defines `FROM php:8.4-fpm`. For more details on this failure, see troubleshooting section `T-01`.

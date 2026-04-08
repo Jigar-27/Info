@@ -1,7 +1,5 @@
 # DevOps Learning Book (All Modules, End-to-End)
 
-This is your complete book-style guide for the local Docker DevOps lab in:
-`/Users/jigar/Main/Info/Devops`
 
 ## How To Read This Book
 
@@ -11,11 +9,11 @@ Use this in sequence:
 3. Operate: debug failures with intent, not trial-and-error.
 4. Improve: add security, observability, and repeatability.
 
-If you follow this order, you are learning real DevOps habits, not just commands.
+Following this order builds real DevOps habits, not just commands.
 
 ## Chapter 1: The Big Picture
 
-Your lab has five major modules:
+The lab has five major modules:
 - Core Application Runtime
 - CI/CD Pipeline
 - Kubernetes Runtime
@@ -23,11 +21,11 @@ Your lab has five major modules:
 - Monitoring and Logging
 
 Think of it like a factory:
-- Core runtime is the machine where your app runs.
+- Core runtime is the machine where the app runs.
 - CI/CD is the assembly line that checks and ships changes.
 - Kubernetes is the production floor scheduler.
 - IaC is the blueprint that can rebuild the factory anytime.
-- Monitoring is your control room and alarms.
+- Monitoring is the control room and alarms.
 
 ## Chapter 2: Module 1 - Core Application Runtime
 
@@ -39,7 +37,7 @@ Run Laravel locally with production-like services in containers.
 - `Dockerfile.php`
 - `nginx.conf`
 
-### What You Get
+### Included Components
 - `nginx`: HTTP entrypoint for app traffic.
 - `php`: executes Laravel code.
 - `mysql`: relational database.
@@ -47,13 +45,13 @@ Run Laravel locally with production-like services in containers.
 - `queue`: background jobs worker.
 
 ### Why This Module Matters
-Without stable runtime, every other module becomes noisy. CI tests fail, k8s deploy fails, and monitoring shows chaos. This is your ground truth.
+Without stable runtime, every other module becomes noisy. CI tests fail, k8s deploy fails, and monitoring shows chaos. This is the ground truth.
 
 ### Daily Use
 ```bash
-docker compose -f devops/docker-compose.yml up -d
-docker compose -f devops/docker-compose.yml ps
-docker compose -f devops/docker-compose.yml logs -f php
+docker compose -f docker-compose.yml up -d
+docker compose -f docker-compose.yml ps
+docker compose -f docker-compose.yml logs -f php
 ```
 
 ### Common Failure Patterns
@@ -64,7 +62,7 @@ docker compose -f devops/docker-compose.yml logs -f php
 ## Chapter 3: Module 2 - CI/CD Pipeline
 
 ### Goal
-Automatically validate and package your code whenever changes happen.
+Automatically validate and package the code whenever changes happen.
 
 ### Files Involved
 - `.drone.yml`
@@ -86,7 +84,7 @@ Automatically validate and package your code whenever changes happen.
 ### Why This Module Matters
 This module protects quality. It prevents broken code from becoming deployable artifacts.
 
-### Skills You Build
+### Skills Covered
 - Pipeline design
 - Build reproducibility
 - Artifact versioning
@@ -95,7 +93,7 @@ This module protects quality. It prevents broken code from becoming deployable a
 ## Chapter 4: Module 3 - Kubernetes Runtime
 
 ### Goal
-Run your app in orchestrated workloads (pods, deployments, services).
+Run the app in orchestrated workloads (pods, deployments, services).
 
 ### Files Involved
 - `docker-compose.k8s.yml`
@@ -106,7 +104,7 @@ Run your app in orchestrated workloads (pods, deployments, services).
 - `k8s/service.yml`
 - `k8s/registries.yaml`
 
-### What You Learn
+### Core Concepts
 - Desired state vs imperative actions
 - Rolling updates and rollback behavior
 - Service exposure with NodePort
@@ -142,13 +140,13 @@ Creates and tracks infrastructure resources (networks, volumes, containers).
 Configures running systems (checks, migrations, cache clear, optimization).
 
 ### Why This Module Matters
-IaC is the backbone of reproducibility. If you can destroy and recreate reliably, your system is dependable.
+IaC is the backbone of reproducibility. If one can destroy and recreate reliably, the system is dependable.
 
 ### Practical Loop
 ```bash
-docker compose -f devops/docker-compose.iac.yml run --rm terraform plan
-docker compose -f devops/docker-compose.iac.yml run --rm terraform apply -auto-approve
-docker compose -f devops/docker-compose.iac.yml run --rm ansible site.yml
+docker compose -f docker-compose.iac.yml run --rm terraform plan
+docker compose -f docker-compose.iac.yml run --rm terraform apply -auto-approve
+docker compose -f docker-compose.iac.yml run --rm ansible site.yml
 ```
 
 ## Chapter 6: Module 5 - Monitoring and Logging
@@ -168,9 +166,9 @@ Observe health, performance, and incidents before users complain.
 - Promtail: log shipping
 
 ### Why This Module Matters
-If you cannot see a problem, you cannot fix it quickly. Monitoring converts unknown failures into visible signals.
+If a problem is not visible, it cannot be fixed quickly. Monitoring converts unknown failures into visible signals.
 
-### Signals You Should Track
+### Signals to Track
 - Availability (`up` style checks)
 - Latency and error rates
 - Resource usage trends
@@ -183,7 +181,7 @@ If you cannot see a problem, you cannot fix it quickly. Monitoring converts unkn
 - Never expose raw state files in docs portals.
 - Redact sensitive values in examples.
 
-### In Your Portal
+### In The Portal
 - Sensitive keys are redacted before render/copy/download.
 - `terraform.tfstate` is excluded from browsing list.
 
@@ -233,34 +231,34 @@ Change code -> pipeline builds -> deploy runtime -> verify through dashboards/lo
 
 ## Chapter 10: What Good Progress Looks Like
 
-You are progressing well if:
-- You can explain each module’s role in one sentence.
-- You can reproduce the stack from scratch.
-- You can diagnose failures without random trial-and-error.
-- You can make one safe improvement at a time.
+Signs of progress:
+- Ability to explain each module’s role in one sentence.
+- Ability to reproduce the stack from scratch.
+- Ability to diagnose failures without random trial-and-error.
+- Ability to make one safe improvement at a time.
 
 ## Appendix: High-Value Commands
 
 ```bash
 # Core runtime
-docker compose -f devops/docker-compose.yml up -d
+docker compose -f docker-compose.yml up -d
 
 # CI/CD
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.cicd.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.cicd.yml up -d
 
 # Kubernetes
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.k8s.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.k8s.yml up -d
 
 # IaC
-docker compose -f devops/docker-compose.iac.yml run --rm terraform apply -auto-approve
+docker compose -f docker-compose.iac.yml run --rm terraform apply -auto-approve
 
 # Monitoring
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ```
 
 ## Closing Note
 
-You are not just learning tools. You are learning system thinking:
+This represents system thinking, not just tool usage:
 - Build correctly
 - Ship safely
 - Observe continuously

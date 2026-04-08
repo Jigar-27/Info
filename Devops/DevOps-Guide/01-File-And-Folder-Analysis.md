@@ -1,15 +1,13 @@
 # File And Folder Analysis
 
-This is a practical analysis of every main file and folder in `/Users/jigar/Main/Info/Devops`.
-
 ## Top-Level Files
 
 ### `.drone.yml`
 - Purpose: CI pipeline (install deps, lint, test, build/push image).
 - Good: uses `php:8.4-cli` and Kaniko for build/push.
 - Watch-out:
-  - Uses hardcoded registry host `10.80.30.83:5050`.
-  - If your IP changes, pipeline push will fail.
+  - Uses hardcoded registry host `<YOUR-HOST-IP>:5050`.
+  - If the host IP changes, pipeline push will fail.
 
 ### `Dockerfile.php`
 - Purpose: PHP-FPM app image for Laravel.
@@ -24,14 +22,14 @@ This is a practical analysis of every main file and folder in `/Users/jigar/Main
 - Purpose: core app stack (nginx, php, mysql, redis, queue).
 - Good: network and service layout is clean.
 - Watch-out:
-  - Uses `context: ../` and `dockerfile: devops/Dockerfile.php`.
-  - This assumes compose is run from project root where `devops/` is a child.
+  - Uses `context: ../` and `dockerfile: Dockerfile.php`.
+  - This assumes compose is run from project root that contains the deployment configs.
 
 ### `docker-compose.cicd.yml`
 - Purpose: Gitea + Drone + runner + local registry.
 - Good: includes admin user and runner socket mount.
 - Watch-out:
-  - Uses hardcoded IP `10.80.30.83` in Gitea/Drone env vars.
+  - Uses hardcoded IP `<YOUR-HOST-IP>` in Gitea/Drone env vars.
   - Registry is mapped as `5050:5000`, but some older docs use `5000`.
 
 ### `docker-compose.k8s.yml`
@@ -137,7 +135,7 @@ This is a practical analysis of every main file and folder in `/Users/jigar/Main
 
 ### `site.yml`
 - Checks PHP/Laravel, runs migrations, clears cache, optimizes app.
-- Good: executed successfully per your logs.
+- Good: automated standard maintenance tasks reliable for routine deployment.
 
 ### `roles/`
 - currently empty, ready for future role-based refactor.

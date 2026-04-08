@@ -1,12 +1,12 @@
 # First Run And Daily Workflow
 
 ## 1) Start Core App
-Run from the **project root** (the folder that contains the `devops/` directory):
+Run from the **project root** (the root project directory):
 
 ```bash
-docker compose -f devops/docker-compose.yml build --no-cache
-docker compose -f devops/docker-compose.yml up -d
-docker compose -f devops/docker-compose.yml ps
+docker compose -f docker-compose.yml build --no-cache
+docker compose -f docker-compose.yml up -d
+docker compose -f docker-compose.yml ps
 ```
 
 Check app:
@@ -18,8 +18,8 @@ curl -I http://localhost:8080
 ## 2) CI/CD Session
 
 ```bash
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.cicd.yml up -d
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.cicd.yml ps
+docker compose -f docker-compose.yml -f docker-compose.cicd.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.cicd.yml ps
 ```
 
 UIs:
@@ -31,8 +31,8 @@ UIs:
 To save RAM, stop CI/CD first.
 
 ```bash
-docker compose -f devops/docker-compose.cicd.yml down
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.k8s.yml up -d
+docker compose -f docker-compose.cicd.yml down
+docker compose -f docker-compose.yml -f docker-compose.k8s.yml up -d
 kubectl get nodes
 ```
 
@@ -42,16 +42,16 @@ App via k8s NodePort:
 ## 4) IaC Session
 
 ```bash
-docker compose -f devops/docker-compose.iac.yml run --rm terraform init
-docker compose -f devops/docker-compose.iac.yml run --rm terraform plan
-docker compose -f devops/docker-compose.iac.yml run --rm terraform apply -auto-approve
-docker compose -f devops/docker-compose.iac.yml run --rm ansible site.yml
+docker compose -f docker-compose.iac.yml run --rm terraform init
+docker compose -f docker-compose.iac.yml run --rm terraform plan
+docker compose -f docker-compose.iac.yml run --rm terraform apply -auto-approve
+docker compose -f docker-compose.iac.yml run --rm ansible site.yml
 ```
 
 ## 5) Monitoring Session
 
 ```bash
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ```
 
 UIs:

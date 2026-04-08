@@ -1,10 +1,10 @@
 # DevOps Lab Handbook (Merged)
 
-This is the merged handbook for your full Docker-based DevOps practice environment.
+This is the merged handbook for the full Docker-based DevOps practice environment.
 
 ## 1. Overview
 
-You are running a local end-to-end lab with:
+This is a local end-to-end lab with:
 - Core app stack (Laravel + Nginx + PHP + MySQL + Redis + Queue)
 - CI/CD (Gitea + Drone + local registry)
 - Kubernetes (k3s + Portainer)
@@ -14,7 +14,7 @@ You are running a local end-to-end lab with:
 ## 2. Architecture
 
 ### Core Runtime
-- `docker-compose.yml` is your base stack.
+- `docker-compose.yml` is the base stack.
 - App HTTP endpoint: `http://localhost:8080`
 
 ### CI/CD
@@ -57,12 +57,12 @@ You are running a local end-to-end lab with:
 
 ## 4. First Run
 
-Run from project root (folder that contains `devops/`):
+Run from project root (root project directory):
 
 ```bash
-docker compose -f devops/docker-compose.yml build --no-cache
-docker compose -f devops/docker-compose.yml up -d
-docker compose -f devops/docker-compose.yml ps
+docker compose -f docker-compose.yml build --no-cache
+docker compose -f docker-compose.yml up -d
+docker compose -f docker-compose.yml ps
 curl -I http://localhost:8080
 ```
 
@@ -70,27 +70,27 @@ curl -I http://localhost:8080
 
 ### CI/CD day
 ```bash
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.cicd.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.cicd.yml up -d
 ```
 
 ### Kubernetes day
 ```bash
-docker compose -f devops/docker-compose.cicd.yml down
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.k8s.yml up -d
+docker compose -f docker-compose.cicd.yml down
+docker compose -f docker-compose.yml -f docker-compose.k8s.yml up -d
 kubectl get nodes
 ```
 
 ### IaC day
 ```bash
-docker compose -f devops/docker-compose.iac.yml run --rm terraform init
-docker compose -f devops/docker-compose.iac.yml run --rm terraform plan
-docker compose -f devops/docker-compose.iac.yml run --rm terraform apply -auto-approve
-docker compose -f devops/docker-compose.iac.yml run --rm ansible site.yml
+docker compose -f docker-compose.iac.yml run --rm terraform init
+docker compose -f docker-compose.iac.yml run --rm terraform plan
+docker compose -f docker-compose.iac.yml run --rm terraform apply -auto-approve
+docker compose -f docker-compose.iac.yml run --rm ansible site.yml
 ```
 
 ### Monitoring day
 ```bash
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ```
 
 ## 6. Troubleshooting
@@ -98,9 +98,9 @@ docker compose -f devops/docker-compose.yml -f devops/docker-compose.monitoring.
 ### Build error: lock requires PHP >= 8.4 but build shows 8.2
 
 ```bash
-grep '^FROM' devops/Dockerfile.php
-docker compose -f devops/docker-compose.yml config | grep -A4 'build:'
-docker compose -f devops/docker-compose.yml build --no-cache
+grep '^FROM' Dockerfile.php
+docker compose -f docker-compose.yml config | grep -A4 'build:'
+docker compose -f docker-compose.yml build --no-cache
 ```
 
 If 8.2 still appears, command is being run from wrong path or wrong compose project.
@@ -120,22 +120,22 @@ Add Docker socket mount in promtail service:
 ### Orphan container warning
 Not fatal. Optional cleanup:
 ```bash
-docker compose -f devops/docker-compose.yml down --remove-orphans
+docker compose -f docker-compose.yml down --remove-orphans
 ```
 
 ## 7. Command Cheat Sheet
 
 ### Core
 ```bash
-docker compose -f devops/docker-compose.yml up -d
-docker compose -f devops/docker-compose.yml ps
-docker compose -f devops/docker-compose.yml logs -f php
+docker compose -f docker-compose.yml up -d
+docker compose -f docker-compose.yml ps
+docker compose -f docker-compose.yml logs -f php
 ```
 
 ### Cleanup
 ```bash
-docker compose -f devops/docker-compose.yml down
-docker compose -f devops/docker-compose.cicd.yml down
-docker compose -f devops/docker-compose.k8s.yml down
-docker compose -f devops/docker-compose.monitoring.yml down
+docker compose -f docker-compose.yml down
+docker compose -f docker-compose.cicd.yml down
+docker compose -f docker-compose.k8s.yml down
+docker compose -f docker-compose.monitoring.yml down
 ```
